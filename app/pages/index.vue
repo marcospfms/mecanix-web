@@ -8,6 +8,7 @@ definePageMeta({
 const auth = useAuth();
 const toast = useAppToast();
 const selectedEmployeeUserId = ref<number | null>(null);
+const manualRefreshing = ref(false);
 
 const {
   data: stats,
@@ -18,7 +19,8 @@ const {
 
 const isAuthReady = computed(() => auth.hydrated.value);
 const isLoading = computed(() => status.value === 'pending' && !stats.value);
-const isRefreshing = computed(() => status.value === 'pending' && !!stats.value);
+const isRefreshing = computed(() => manualRefreshing.value || (status.value === 'pending' && !!stats.value));
+const isDataRefreshing = computed(() => manualRefreshing.value && !!stats.value);
 
 const firstName = computed(() => auth.user.value?.name?.split(' ')[0] ?? 'Equipe');
 
@@ -91,13 +93,24 @@ const formatDateTime = (value?: string) => {
 };
 
 const handleRefresh = async () => {
+  if (manualRefreshing.value) {
+    return;
+  }
+
+  manualRefreshing.value = true;
+
   try {
-    await refresh();
+    await Promise.all([
+      refresh(),
+      new Promise((resolve) => setTimeout(resolve, 1000))
+    ]);
   } catch {
     toast.error({
       title: 'Falha ao atualizar',
       description: 'Não foi possível recarregar o dashboard agora.'
     });
+  } finally {
+    manualRefreshing.value = false;
   }
 };
 </script>
@@ -149,6 +162,12 @@ const handleRefresh = async () => {
           icon="i-lucide-circle-alert"
           title="Falha ao carregar o dashboard"
           description="Atualize a página ou tente novamente em instantes."
+        />
+
+        <AppLoading
+          v-else-if="isDataRefreshing"
+          title="Atualizando dashboard"
+          description="Buscando os dados mais recentes da operação."
         />
 
         <template v-else-if="stats">
