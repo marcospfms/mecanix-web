@@ -1,6 +1,6 @@
 # Roadmap V1.0 — Fundação (Mecanix Client)
 
-> **Status**: Fase 1 concluída · Fase 2 concluída · Dashboard ainda pendente  
+> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída  
 > **Referência app mobile**: `mecanix-app/` — todas as funcionalidades abaixo espelham o app, exceto assinatura/pagamento
 
 ## Objetivo
@@ -113,7 +113,7 @@ interface User {
 > **API**: `GET /api/dashboard?employee_user_id={id}`  
 > **Referência**: `mecanix-app/app/(tabs)/index.tsx`
 
-- [ ] Página `/` (home):
+- [x] Página `/` (home):
   - Card "Checklists este mês" (count)
   - Card "Veículos vistoriados este mês" (count)
   - Cards de totais: Clientes, Empresas, Veículos, Templates de checklist
@@ -124,13 +124,13 @@ interface User {
     - Data de execução
     - Status (concluído / rascunho)
   - Seção "Checklists por funcionário" (lista/gráfico de barras) — visível se houver funcionários
-- [ ] Filtro de funcionário (select) — retorna stats filtradas do mesmo endpoint
-- [ ] Botão de atualizar (refresh)
-- [ ] Composable `useDashboard()` com `data`, `loading`, `refresh()`
+- [x] Filtro de funcionário (select) — retorna stats filtradas do mesmo endpoint
+- [x] Botão de atualizar (refresh)
+- [x] Composable `useDashboard()` com `data`, `loading`, `refresh()`
 
 > Observação: como o projeto é uma SPA autenticada, o dashboard deve depender de fetch client-side / hydrated data, não de prerender.
 
-> **Próximo passo recomendado**: começar por esta fase. A autenticação e o shell já estão prontos para integrar o dashboard real do owner com o `mecanix-core`.
+> Situação atual da fase 3: concluída. O dashboard já consome `GET /api/dashboard`, suporta filtro por funcionário e reaproveita a estrutura conceitual do app mobile em uma composição web mobile first.
 
 ---
 
