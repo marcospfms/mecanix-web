@@ -324,7 +324,7 @@ const handleRefresh = async () => {
           <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div class="flex items-start gap-4">
               <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-muted/30">
-                <img
+                <NuxtImg
                   v-if="company.logo_url"
                   :src="company.logo_url"
                   :alt="company.name"
@@ -426,7 +426,7 @@ const handleRefresh = async () => {
             <div class="rounded-2xl border border-default bg-muted/20 p-4">
               <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div class="flex size-20 items-center justify-center overflow-hidden rounded-2xl border border-default bg-default">
-                  <img
+                  <NuxtImg
                     v-if="resolvedLogoPreview"
                     :src="resolvedLogoPreview"
                     alt="Preview da logo"

@@ -22,10 +22,11 @@ const navigation = [
       <aside class="hidden w-72 shrink-0 border-r border-default bg-muted/30 lg:flex lg:flex-col">
         <div class="border-b border-default px-6 py-5">
           <div class="flex items-center gap-3">
-            <img
+            <NuxtImg
               :src="brandIconSrc"
               alt="Mecanix"
               class="h-9 w-9 rounded-xl object-contain"
+              loading="eager"
             />
             <span class="text-lg font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
           </div>
@@ -81,10 +82,11 @@ const navigation = [
         <header class="border-b border-default bg-default px-4 py-3 lg:hidden">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <img
+              <NuxtImg
                 :src="brandIconSrc"
                 alt="Mecanix"
                 class="h-8 w-8 rounded-lg object-contain"
+                loading="eager"
               />
               <span class="text-base font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
             </div>
@@ -124,10 +126,11 @@ const navigation = [
         <div class="flex h-full flex-col bg-default">
           <div class="flex items-center justify-between border-b border-default px-4 py-4">
             <div class="flex items-center gap-3">
-              <img
+              <NuxtImg
                 :src="brandIconSrc"
                 alt="Mecanix"
                 class="h-8 w-8 rounded-lg object-contain"
+                loading="eager"
               />
               <span class="text-base font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
             </div>

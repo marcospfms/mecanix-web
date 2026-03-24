@@ -4,10 +4,11 @@
       <div class="grid w-full gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
         <div class="rounded-[1.75rem] border border-default bg-elevated/70 p-5 shadow-lg sm:p-6 sm:shadow-xl lg:hidden">
           <div class="space-y-5">
-            <img
+            <NuxtImg
               src="/branding/logo-transparent.png"
               alt="Mecanix"
               class="h-10 w-auto"
+              loading="eager"
             />
 
             <div class="space-y-2">
@@ -37,10 +38,11 @@
 
         <div class="hidden lg:flex flex-col justify-between rounded-3xl border border-default bg-elevated/65 p-10 shadow-xl">
           <div class="space-y-6">
-            <img
+            <NuxtImg
               src="/branding/logo-transparent.png"
               alt="Mecanix"
               class="h-11 w-auto"
+              loading="eager"
             />
             <div class="space-y-3">
               <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">

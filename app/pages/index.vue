@@ -104,47 +104,54 @@ const handleRefresh = async () => {
 
 <template>
   <div class="space-y-5 sm:space-y-6">
-    <AppLoading
-      v-if="!isAuthReady"
-      title="Preparando dashboard"
-      description="Aguarde enquanto a sua sessão é carregada."
-    />
-
-    <template v-else>
-      <section class="space-y-3">
-        <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-          Dashboard
-        </p>
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div class="space-y-2">
-          <h1 class="text-3xl font-semibold tracking-tight text-highlighted">
-            Olá, {{ firstName }}
-          </h1>
-            <p class="max-w-2xl text-sm leading-6 text-toned">
-              Acompanhe o ritmo da oficina, os cadastros principais e as últimas execuções em um só
-              lugar.
-            </p>
-          </div>
-
-      </div>
-    </section>
+    <ClientOnly>
+      <template #fallback>
+        <AppLoading
+          title="Preparando dashboard"
+          description="Aguarde enquanto a sua sessão é carregada."
+        />
+      </template>
 
       <AppLoading
-        v-if="isLoading"
-        title="Carregando dashboard"
-        description="Buscando o panorama mais recente da operação."
+        v-if="!isAuthReady"
+        title="Preparando dashboard"
+        description="Aguarde enquanto a sua sessão é carregada."
       />
 
-      <UAlert
-        v-else-if="error"
-        color="error"
-        variant="soft"
-        icon="i-lucide-circle-alert"
-        title="Falha ao carregar o dashboard"
-        description="Atualize a página ou tente novamente em instantes."
-      />
+      <template v-else>
+        <section class="space-y-3">
+          <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
+            Dashboard
+          </p>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div class="space-y-2">
+              <h1 class="text-3xl font-semibold tracking-tight text-highlighted">
+                Olá, {{ firstName }}
+              </h1>
+              <p class="max-w-2xl text-sm leading-6 text-toned">
+                Acompanhe o ritmo da oficina, os cadastros principais e as últimas execuções em um só
+                lugar.
+              </p>
+            </div>
+          </div>
+        </section>
 
-      <template v-else-if="stats">
+        <AppLoading
+          v-if="isLoading"
+          title="Carregando dashboard"
+          description="Buscando o panorama mais recente da operação."
+        />
+
+        <UAlert
+          v-else-if="error"
+          color="error"
+          variant="soft"
+          icon="i-lucide-circle-alert"
+          title="Falha ao carregar o dashboard"
+          description="Atualize a página ou tente novamente em instantes."
+        />
+
+        <template v-else-if="stats">
         <UCard class="rounded-[1.75rem] border-default bg-default">
           <div class="space-y-5">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -345,7 +352,8 @@ const handleRefresh = async () => {
             </UCard>
           </div>
         </section>
+        </template>
       </template>
-    </template>
+    </ClientOnly>
   </div>
 </template>
