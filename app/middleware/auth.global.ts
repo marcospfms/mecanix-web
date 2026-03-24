@@ -1,7 +1,8 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const auth = useAuth();
+  const hasToken = Boolean(auth.token.value);
 
-  if (!auth.hydrated.value && import.meta.client) {
+  if (!auth.hydrated.value && hasToken) {
     try {
       await auth.refresh();
     } catch {
@@ -10,7 +11,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   const isAuthRoute = to.path === '/login' || to.path === '/oauthredirect';
-  const hasToken = Boolean(auth.token.value);
 
   if (!auth.isAuthenticated.value && !hasToken && !isAuthRoute) {
     return navigateTo('/login');

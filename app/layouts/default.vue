@@ -1,5 +1,7 @@
 <script setup lang="ts">
 const auth = useAuth();
+const mobileMenuOpen = ref(false);
+const brandIconSrc = '/branding/icon-transparent-sm.png';
 
 const navigation = [
   { label: 'Dashboard', to: '/', icon: 'i-lucide-layout-dashboard' },
@@ -16,7 +18,14 @@ const navigation = [
     <div class="flex min-h-screen">
       <aside class="hidden w-72 shrink-0 border-r border-default bg-muted/30 lg:flex lg:flex-col">
         <div class="border-b border-default px-6 py-5">
-          <AppLogo class="h-7 w-auto" />
+          <div class="flex items-center gap-3">
+            <img
+              :src="brandIconSrc"
+              alt="Mecanix"
+              class="h-9 w-9 rounded-xl object-contain"
+            />
+            <span class="text-lg font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
+          </div>
         </div>
 
         <nav class="flex-1 px-4 py-5">
@@ -57,8 +66,21 @@ const navigation = [
       <div class="flex min-w-0 flex-1 flex-col">
         <header class="border-b border-default bg-default px-4 py-3 lg:hidden">
           <div class="flex items-center justify-between gap-3">
-            <AppLogo class="h-6 w-auto" />
+            <div class="flex items-center gap-3">
+              <img
+                :src="brandIconSrc"
+                alt="Mecanix"
+                class="h-8 w-8 rounded-lg object-contain"
+              />
+              <span class="text-base font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
+            </div>
             <div class="flex items-center gap-2">
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-menu"
+                @click="mobileMenuOpen = true"
+              />
               <UColorModeButton />
               <UButton
                 color="neutral"
@@ -77,5 +99,58 @@ const navigation = [
         </main>
       </div>
     </div>
+
+    <USlideover
+      v-model:open="mobileMenuOpen"
+      side="left"
+      title="Menu de navegação"
+      description="Acesse as áreas principais do Mecanix."
+    >
+      <template #content="{ close }">
+        <div class="flex h-full flex-col bg-default">
+          <div class="flex items-center justify-between border-b border-default px-4 py-4">
+            <div class="flex items-center gap-3">
+              <img
+                :src="brandIconSrc"
+                alt="Mecanix"
+                class="h-8 w-8 rounded-lg object-contain"
+              />
+              <span class="text-base font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
+            </div>
+
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-x"
+              @click="close()"
+            />
+          </div>
+
+          <nav class="flex-1 px-3 py-4">
+            <ul class="space-y-2">
+              <li v-for="item in navigation" :key="item.to">
+                <UButton
+                  :to="item.to"
+                  variant="ghost"
+                  color="neutral"
+                  class="w-full justify-start rounded-xl px-3 py-2.5"
+                  :icon="item.icon"
+                  @click="close()"
+                >
+                  {{ item.label }}
+                </UButton>
+              </li>
+            </ul>
+          </nav>
+
+          <div class="border-t border-default px-4 py-4">
+            <div class="rounded-2xl border border-default bg-default p-4">
+              <p class="text-sm font-medium text-highlighted">{{ auth.user.value?.name }}</p>
+              <p class="mt-1 text-xs text-toned">{{ auth.user.value?.email }}</p>
+            </div>
+          </div>
+        </div>
+      </template>
+    </USlideover>
   </div>
 </template>
