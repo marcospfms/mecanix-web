@@ -1,9 +1,22 @@
-# Mecanix Client Napkin
+# Napkin Runbook
 
-## Skills
-- Sempre usar a skill `nuxt` ao trabalhar no `mecanix-client`.
+## Curation Rules
+- Re-prioritize on every read.
+- Keep recurring, high-value notes only.
+- Max 10 items per category.
+- Each item includes date + "Do instead".
 
-## Projeto
-- `mecanix-client` e o app web do owner.
-- Consome os endpoints do `mecanix-core` para operações do dono da loja.
-- Assinatura do plano continua fora do escopo operacional principal do app web.
+## Execution & Validation (Highest Priority)
+1. **[2026-03-24] Owner-only web app**
+   Do instead: bloquear funcionário no middleware e nas telas sensíveis; assumir que o `mecanix-client` existe só para o dono da operação.
+
+## Design & Product Guardrails
+1. **[2026-03-24] Identidade visual deve seguir o ecossistema Mecanix**
+   Do instead: usar como base a linguagem da tela de welcome/login do `mecanix-core`, com branding azul, acentos de marca e ícones consistentes.
+
+## Framework & Stack
+1. **[2026-03-24] Sempre usar a skill `nuxt`**
+   Do instead: consultar primeiro os padrões de Nuxt 4 antes de editar rotas, layouts, middleware, plugins ou composables do `mecanix-client`.
+
+2. **[2026-03-24] SPA autenticada consumindo o `mecanix-core`**
+   Do instead: iniciar Google no frontend, trocar token em `POST /api/auth/google` e tratar o app como painel fechado sem prerender da home.

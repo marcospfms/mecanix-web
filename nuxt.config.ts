@@ -11,11 +11,15 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  routeRules: {
-    '/': { prerender: true }
-  },
-
   compatibilityDate: '2025-01-15',
+
+  runtimeConfig: {
+    public: {
+      apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:8000/api',
+      appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID_WEB || ''
+    }
+  },
 
   eslint: {
     config: {
