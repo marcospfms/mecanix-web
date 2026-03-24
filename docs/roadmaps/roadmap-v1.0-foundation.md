@@ -1,6 +1,6 @@
 # Roadmap V1.0 — Fundação (Mecanix Client)
 
-> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída  
+> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída · Fase 4 concluída  
 > **Referência app mobile**: `mecanix-app/` — todas as funcionalidades abaixo espelham o app, exceto assinatura/pagamento
 
 ## Objetivo
@@ -139,18 +139,18 @@ interface User {
 > **API**: `GET|POST /api/companies` · `GET|PUT|DELETE /api/companies/{id}` · `DELETE /api/companies/{id}/logo`  
 > **Referência**: `mecanix-app/app/(tabs)/manage/companies/`
 
-- [ ] Página `/companies` — listagem:
+- [x] Página `/companies` — listagem:
   - Grid de cards com logo, nome, CNPJ
   - Busca em tempo real por nome ou CNPJ
   - Botão "Nova empresa"
   - Ações por card: editar, excluir (com confirmação)
-- [ ] Drawer (ou modal) "Criar empresa":
+- [x] Drawer (ou modal) "Criar empresa":
   - Campos: nome (obrigatório), CNPJ (obrigatório, com formatação e validação)
   - Upload de logo: imagem, máx 2 MB, preview antes de salvar
-- [ ] Drawer "Editar empresa":
+- [x] Drawer "Editar empresa":
   - Editar nome e CNPJ
   - Substituir / remover logo
-- [ ] Composable `useCompanies()` — `list`, `create()`, `update()`, `remove()`, `removeLogo()`
+- [x] Composable `useCompanies()` — `list`, `create()`, `update()`, `remove()`, `removeLogo()`
 
 ### Campos exibidos
 
@@ -159,6 +159,8 @@ interface User {
 | `name` | Nome da empresa                     |
 | `cnpj` | CNPJ formatado (XX.XXX.XXX/XXXX-XX) |
 | `logo` | URL da logo ou avatar com iniciais  |
+
+> Situação atual da fase 4: concluída. A tela web já permite buscar, criar, editar, excluir e gerenciar a logo das empresas em uma experiência mobile first com slideover.
 
 ---
 

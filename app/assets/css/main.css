@@ -31,4 +31,11 @@
     --ui-bg-elevated: var(--ui-color-neutral-800);
     --ui-bg-accented: var(--ui-color-neutral-700);
   }
+
+  button,
+  [role='button'],
+  a,
+  summary {
+    cursor: pointer;
+  }
 }

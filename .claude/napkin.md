@@ -14,6 +14,9 @@
 1. **[2026-03-24] Identidade visual deve seguir o ecossistema Mecanix**
    Do instead: usar como base a linguagem da tela de welcome/login do `mecanix-core`, com branding azul, acentos de marca e ícones consistentes.
 
+2. **[2026-03-24] Formulários em slideover seguem padrão enxuto**
+   Do instead: usar label em bloco acima do input, evitar subtítulo redundante, contador abaixo do campo alinhado à direita e padding lateral moderado no drawer.
+
 ## Framework & Stack
 1. **[2026-03-24] Sempre usar a skill `nuxt`**
    Do instead: consultar primeiro os padrões de Nuxt 4 antes de editar rotas, layouts, middleware, plugins ou composables do `mecanix-client`.
@@ -23,3 +26,6 @@
 
 3. **[2026-03-24] SPA autenticada consumindo o `mecanix-core`**
    Do instead: iniciar Google no frontend, trocar token em `POST /api/auth/google` e tratar o app como painel fechado sem prerender da home.
+
+4. **[2026-03-24] Refresh manual deve dar feedback visível**
+   Do instead: quando houver botão de atualizar em listas, usar loading na área de conteúdo por pelo menos 1 segundo para o usuário perceber a ação.
