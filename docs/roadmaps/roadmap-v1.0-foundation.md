@@ -1,6 +1,6 @@
 # Roadmap V1.0 — Fundação (Mecanix Client)
 
-> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída · Fase 4 concluída  
+> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída · Fase 4 concluída · Fase 5 em andamento  
 > **Referência app mobile**: `mecanix-app/` — todas as funcionalidades abaixo espelham o app, exceto assinatura/pagamento
 
 ## Objetivo
@@ -169,20 +169,20 @@ interface User {
 > **API**: `GET|POST /api/customers` · `GET|PUT|DELETE /api/customers/{id}`  
 > **Referência**: `mecanix-app/app/(tabs)/manage/customers/`
 
-- [ ] Página `/customers` — listagem:
+- [x] Página `/customers` — listagem:
   - Busca por nome, CPF/CNPJ, telefone, e-mail
   - Lista ordenada alfabeticamente
   - Cada item: nome, CPF/CNPJ formatado, telefone (link WhatsApp direto se disponível)
   - Botão "Novo cliente"
   - Ações: editar, excluir (com confirmação)
-- [ ] Drawer "Criar cliente":
+- [x] Drawer "Criar cliente":
   - Campos: nome (obrigatório), CPF ou CNPJ (obrigatório, com validação), telefone (opcional, DDD + número), e-mail (opcional)
-- [ ] Drawer "Editar cliente"
-- [ ] Página `/customers/{id}` — detalhes do cliente:
+- [x] Drawer "Editar cliente"
+- [x] Página `/customers/{id}` — detalhes do cliente:
   - Dados cadastrais
   - Lista de veículos do cliente com link para cada um
   - Botão "Novo veículo para este cliente"
-- [ ] Composable `useCustomers()` — `list`, `search`, `create()`, `update()`, `remove()`
+- [x] Composable `useCustomers()` — `list`, `search`, `create()`, `update()`, `remove()`
 
 ### Campos exibidos
 
@@ -192,6 +192,8 @@ interface User {
 | `tax_id` | CPF (XXX.XXX.XXX-XX) ou CNPJ formatado               |
 | `phone`  | Telefone com link WhatsApp (`wa.me/55{ddd}{number}`) |
 | `email`  | E-mail com link `mailto:`                            |
+
+> Situação atual da fase 5: parcialmente concluída. A listagem, formulário e detalhe do cliente já existem, mas ainda falta amadurecer a UX do card e plugar as ações úteis de contato/veículos para fechar a fase com o mesmo nível de polimento de `companies`.
 
 ---
 
