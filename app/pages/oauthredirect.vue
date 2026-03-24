@@ -9,10 +9,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UCard class="rounded-3xl">
-    <div class="flex flex-col items-center justify-center gap-3 py-10">
-      <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-primary" />
-      <p class="text-sm text-toned">Redirecionando para o login...</p>
-    </div>
-  </UCard>
+  <AppLoading
+    title="Redirecionando"
+    description="Você será levado para a tela de acesso."
+  />
 </template>

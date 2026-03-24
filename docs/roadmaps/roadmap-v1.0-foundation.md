@@ -1,6 +1,6 @@
 # Roadmap V1.0 — Fundação (Mecanix Client)
 
-> **Status**: Projeto iniciado · Zero funcionalidades implementadas  
+> **Status**: Fase 1 concluída · Fase 2 concluída · Dashboard ainda pendente  
 > **Referência app mobile**: `mecanix-app/` — todas as funcionalidades abaixo espelham o app, exceto assinatura/pagamento
 
 ## Objetivo
@@ -41,23 +41,23 @@ NUXT_PUBLIC_APP_URL=http://localhost:3000
 
 ### Composable `useAuth()`
 
-- [ ] `user` — estado reativo do usuário autenticado (`Ref<User | null>`)
-- [ ] `token` — token Sanctum (persistido em cookie seguro)
-- [ ] `login(googleToken)` — chama `POST /api/auth/google`, persiste token
-- [ ] `logout()` — chama `POST /api/logout`, apaga cookie e redireciona para `/login`
-- [ ] `refresh()` — chama `GET /api/me` para reidratar usuário ao recarregar página
-- [ ] Plugin `auth.client.ts` — executa `refresh()` no startup do app
-- [ ] Regra adicional: se `user.is_employee === true`, impedir acesso ao client web e encerrar sessão/redirect
+- [x] `user` — estado reativo do usuário autenticado (`Ref<User | null>`)
+- [x] `token` — token Sanctum persistido em cookie
+- [x] `login(googleToken)` — chama `POST /api/auth/google`, persiste token
+- [x] `logout()` — chama `POST /api/logout`, apaga cookie e redireciona para `/login`
+- [x] `refresh()` — chama `GET /api/me` para reidratar usuário ao recarregar página
+- [x] Plugin `auth.client.ts` — executa `refresh()` no startup do app
+- [x] Regra adicional: se `user.is_employee === true`, impedir acesso ao client web e encerrar sessão/redirect
 
 ### Páginas
 
-- [ ] `/login` — tela de login:
+- [x] `/login` — tela de login:
   - Botão "Entrar com Google"
   - OAuth iniciado no frontend Nuxt e finalizado contra `POST /api/auth/google`
   - Estado de loading durante autenticação
-- [ ] `/oauthredirect` — recebe o token do Google OAuth, persiste e redireciona para `/`
-- [ ] Middleware global `auth.ts` — redireciona para `/login` se não autenticado; redireciona para `/` se já autenticado e tentar acessar `/login`
-- [ ] Middleware/named guard complementar `owner-only` — bloqueia funcionário autenticado
+- [x] `/oauthredirect` — rota de compatibilidade/retorno para o fluxo de acesso
+- [x] Middleware global `auth.global.ts` — redireciona para `/login` se não autenticado; redireciona para `/` se já autenticado e tentar acessar `/login`
+- [x] Regra de owner-only embutida no fluxo de auth — bloqueia funcionário autenticado
 
 ### Tipos base
 
@@ -79,30 +79,32 @@ interface User {
 
 ### `layouts/default.vue` (autenticado)
 
-- [ ] Sidebar de navegação com itens:
+- [x] Sidebar de navegação com itens:
   - Dashboard (`/`)
   - Checklists (`/checklists`)
   - Empresas (`/companies`)
   - Clientes (`/customers`)
   - Funcionários (`/employees`)
   - Perfil (`/profile`)
-- [ ] Colapsável em telas menores (hamburguer)
-- [ ] Avatar + nome do usuário no rodapé do sidebar
-- [ ] Botão de logout
-- [ ] Toggle de tema (light / dark / system) via Nuxt UI `useColorMode()`
+- [x] Colapsável em telas menores (hamburguer + `USlideover`)
+- [x] Avatar + nome do usuário no rodapé do sidebar
+- [x] Botão de logout
+- [x] Toggle de tema (light / dark / system) via Nuxt UI `useColorMode()`
 
 ### `layouts/auth.vue` (não autenticado)
 
-- [ ] Tela cheia centralizada, sem sidebar
-- [ ] Logo do Mecanix
+- [x] Tela cheia centralizada, sem sidebar
+- [x] Logo do Mecanix
 
 ### Componentes globais
 
-- [ ] `AppToast` — feedback de sucesso/erro usando `useToast()` do Nuxt UI
-- [ ] `AppConfirm` — modal de confirmação de exclusão reutilizável
-- [ ] `AppEmpty` — estado vazio padrão (para listas sem resultado)
-- [ ] `AppLoading` — spinner de carregamento de página
-- [ ] Página `error.vue` — erros 404/500 com botão de voltar ao início
+- [x] `AppToast` — feedback de sucesso/erro usando `useToast()` do Nuxt UI
+- [x] `AppConfirm` — modal de confirmação de exclusão reutilizável
+- [x] `AppEmpty` — estado vazio padrão (para listas sem resultado)
+- [x] `AppLoading` — spinner de carregamento de página
+- [x] Página `error.vue` — erros 404/500 com botão de voltar ao início
+
+> Situação atual da fase 2: concluída. O shell autenticado, o menu mobile, os componentes-base de UI e a página global de erro já existem.
 
 ---
 
@@ -127,6 +129,8 @@ interface User {
 - [ ] Composable `useDashboard()` com `data`, `loading`, `refresh()`
 
 > Observação: como o projeto é uma SPA autenticada, o dashboard deve depender de fetch client-side / hydrated data, não de prerender.
+
+> **Próximo passo recomendado**: começar por esta fase. A autenticação e o shell já estão prontos para integrar o dashboard real do owner com o `mecanix-core`.
 
 ---
 
