@@ -115,7 +115,7 @@ onMounted(async () => {
 
 <template>
   <div class="w-full min-w-0 space-y-4 sm:space-y-6">
-    <UCard class="w-full min-w-0 overflow-hidden rounded-[1.75rem] border-default bg-default/92 shadow-lg sm:rounded-[2rem] sm:shadow-xl">
+    <UCard class="w-full min-w-0 overflow-hidden rounded-[1.75rem] border-default bg-default/92 shadow-lg sm:shadow-xl">
       <template #header>
         <div class="space-y-3">
           <div class="flex items-center justify-between gap-3">
@@ -140,13 +140,8 @@ onMounted(async () => {
       </template>
 
       <div class="space-y-4 sm:space-y-5">
-        <UAlert
-          v-if="errorMessage"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          :description="errorMessage"
-        />
+        <UAlert v-if="errorMessage" color="error" variant="soft" icon="i-lucide-circle-alert"
+          :description="errorMessage" />
 
         <div class="rounded-[1.5rem] border border-default bg-muted/55 p-4 sm:p-5">
           <div class="mb-4 flex items-start gap-3 sm:mb-5">
@@ -162,10 +157,8 @@ onMounted(async () => {
           </div>
 
           <div class="flex flex-col items-center overflow-hidden rounded-2xl">
-            <div
-              v-if="googleLoading"
-              class="flex h-11 w-[220px] items-center justify-center rounded-full border border-default bg-default"
-            >
+            <div v-if="googleLoading"
+              class="flex h-11 items-center justify-center rounded-full border border-default bg-default">
               <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-primary" />
             </div>
             <div ref="googleButton" class="flex justify-center" />
