@@ -4,6 +4,10 @@ export default defineNuxtConfig({
     baseURL: '/'
   },
 
+  experimental: {
+    typedPages: true
+  },
+
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui'

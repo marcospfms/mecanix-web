@@ -4,7 +4,7 @@ definePageMeta({
 });
 
 onMounted(async () => {
-  await navigateTo('/login', { replace: true });
+  await navigateTo({ name: 'login', replace: true });
 });
 </script>
 

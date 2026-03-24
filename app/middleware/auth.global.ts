@@ -10,10 +10,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
   }
 
-  const isAuthRoute = to.path === '/login' || to.path === '/oauthredirect';
+  const isAuthRoute = to.name === 'login' || to.name === 'oauthredirect';
 
   if (!auth.isAuthenticated.value && !hasToken && !isAuthRoute) {
-    return navigateTo('/login');
+    return navigateTo({ name: 'login' });
   }
 
   if (auth.user.value?.is_employee) {
@@ -22,6 +22,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if ((auth.isAuthenticated.value || hasToken) && isAuthRoute) {
-    return navigateTo('/');
+    return navigateTo({ name: 'index' });
   }
 });

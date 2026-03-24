@@ -24,7 +24,7 @@ type GoogleLoginPayload = {
   id_token: string;
 };
 
-const AUTH_COOKIE_KEY = 'mecanix_client_token';
+export const AUTH_COOKIE_KEY = 'mecanix_client_token';
 
 export function useAuth() {
   const token = useCookie<string | null>(AUTH_COOKIE_KEY, {
@@ -36,30 +36,9 @@ export function useAuth() {
   const user = useState<AuthUser | null>('auth-user', () => null);
   const loading = useState<boolean>('auth-loading', () => false);
   const hydrated = useState<boolean>('auth-hydrated', () => false);
-  const runtimeConfig = useRuntimeConfig();
+  const { $api } = useNuxtApp();
 
   const isAuthenticated = computed(() => Boolean(token.value && user.value));
-
-  const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
-    const headers = new Headers(options.headers);
-    headers.set('Accept', 'application/json');
-
-    if (token.value) {
-      headers.set('Authorization', `Bearer ${token.value}`);
-    }
-
-    if (options.body && !headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json');
-    }
-
-    const response = await $fetch<ApiEnvelope<T>>(path, {
-      baseURL: runtimeConfig.public.apiUrl,
-      ...options,
-      headers
-    });
-
-    return response.data;
-  };
 
   const refresh = async () => {
     if (!token.value) {
@@ -71,10 +50,10 @@ export function useAuth() {
     loading.value = true;
 
     try {
-      const response = await apiFetch<AuthUser>('/me');
-      user.value = response;
+      const response = await $api<ApiEnvelope<AuthUser>>('/me');
+      user.value = response.data;
 
-      if (response.is_employee) {
+      if (response.data.is_employee) {
         token.value = null;
         user.value = null;
         throw createError({
@@ -83,7 +62,7 @@ export function useAuth() {
         });
       }
 
-      return response;
+      return response.data;
     } catch (error) {
       token.value = null;
       user.value = null;
@@ -98,15 +77,15 @@ export function useAuth() {
     loading.value = true;
 
     try {
-      const response = await apiFetch<GoogleAuthResponse>('/auth/google', {
+      const response = await $api<ApiEnvelope<GoogleAuthResponse>>('/auth/google', {
         method: 'POST',
-        body: JSON.stringify(payload)
+        body: payload
       });
 
-      token.value = response.token;
-      user.value = response.user;
+      token.value = response.data.token;
+      user.value = response.data.user;
 
-      if (response.user.is_employee) {
+      if (response.data.user.is_employee) {
         token.value = null;
         user.value = null;
         throw createError({
@@ -117,7 +96,7 @@ export function useAuth() {
 
       hydrated.value = true;
 
-      return response;
+      return response.data;
     } finally {
       loading.value = false;
     }
@@ -126,13 +105,13 @@ export function useAuth() {
   const logout = async () => {
     try {
       if (token.value) {
-        await apiFetch('/logout', { method: 'POST' });
+        await $api('/logout', { method: 'POST' });
       }
     } finally {
       token.value = null;
       user.value = null;
       hydrated.value = true;
-      await navigateTo('/login');
+      await navigateTo({ name: 'login' });
     }
   };
 

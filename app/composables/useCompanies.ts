@@ -1,3 +1,6 @@
+import { useAuth } from './useAuth';
+import { useAPI, useApiFetch } from './useAPI';
+
 export type Company = {
   id: number;
   name: string;
@@ -35,41 +38,15 @@ export function formatCnpj(value: string) {
 
 export function useCompanies() {
   const auth = useAuth();
-  const runtimeConfig = useRuntimeConfig();
   const search = ref('');
 
-  const apiFetch = async <T>(path: string, options: RequestInit = {}) => {
-    const headers = new Headers(options.headers);
-    headers.set('Accept', 'application/json');
-
-    if (auth.token.value) {
-      headers.set('Authorization', `Bearer ${auth.token.value}`);
-    }
-
-    const response = await $fetch<ApiEnvelope<T>>(path, {
-      baseURL: runtimeConfig.public.apiUrl,
-      ...options,
-      headers
-    });
-
-    return response.data;
-  };
-
-  const companiesState = useAsyncData<Company[]>(
-    'companies:list',
-    async () => {
-      if (!auth.token.value) {
-        return [];
-      }
-
-      return await apiFetch<Company[]>('/companies');
-    },
-    {
-      server: false,
-      immediate: false,
-      default: () => []
-    }
-  );
+  const companiesState = useAPI<ApiEnvelope<Company[]>>('/companies', {
+    key: 'companies:list',
+    immediate: false,
+    server: false,
+    default: () => ({ success: true, data: [] }),
+    transform: (response) => response.data
+  });
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
@@ -78,7 +55,7 @@ export function useCompanies() {
 
       if (!token) {
         companiesState.data.value = [];
-        companiesState.error.value = null;
+        companiesState.clear();
         return;
       }
 
@@ -91,10 +68,10 @@ export function useCompanies() {
     const term = search.value.trim().toLowerCase();
 
     if (!term) {
-      return companiesState.data.value;
+      return companiesState.data.value ?? [];
     }
 
-    return companiesState.data.value.filter((company) => {
+    return (companiesState.data.value ?? []).filter((company) => {
       const cnpjDigits = normalizeCnpj(company.cnpj);
 
       return (
@@ -106,19 +83,16 @@ export function useCompanies() {
   });
 
   const createCompany = async (payload: CompanyFormPayload) => {
-    const company = await apiFetch<Company>('/companies', {
+    const company = await useApiFetch<ApiEnvelope<Company>>('/companies', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+      body: {
         name: payload.name.trim(),
         cnpj: normalizeCnpj(payload.cnpj)
-      })
+      }
     });
 
     if (payload.logo) {
-      await updateCompany(company.id, payload);
+      await updateCompany(company.data.id, payload);
     } else {
       await companiesState.refresh();
     }
@@ -132,20 +106,17 @@ export function useCompanies() {
       formData.append('cnpj', normalizeCnpj(payload.cnpj));
       formData.append('logo', payload.logo);
 
-      await apiFetch<Company>(`/companies/${id}`, {
+      await useApiFetch<ApiEnvelope<Company>>(`/companies/${id}`, {
         method: 'POST',
         body: formData
       });
     } else {
-      await apiFetch<Company>(`/companies/${id}`, {
+      await useApiFetch<ApiEnvelope<Company>>(`/companies/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+        body: {
           name: payload.name.trim(),
           cnpj: normalizeCnpj(payload.cnpj)
-        })
+        }
       });
     }
 
@@ -153,12 +124,12 @@ export function useCompanies() {
   };
 
   const deleteCompany = async (id: number) => {
-    await apiFetch(`/companies/${id}`, { method: 'DELETE' });
+    await useApiFetch(`/companies/${id}`, { method: 'DELETE' });
     await companiesState.refresh();
   };
 
   const removeLogo = async (id: number) => {
-    await apiFetch(`/companies/${id}/logo`, { method: 'DELETE' });
+    await useApiFetch(`/companies/${id}/logo`, { method: 'DELETE' });
     await companiesState.refresh();
   };
 

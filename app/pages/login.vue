@@ -39,7 +39,7 @@ const handleCredential = async (response: { credential?: string }) => {
 
   try {
     await auth.loginWithGoogle({ id_token: credential });
-    await navigateTo('/');
+    await navigateTo({ name: 'index' });
   } catch (error: any) {
     errorMessage.value = error?.data?.message ?? error?.message ?? 'Falha ao autenticar.';
     googleLoading.value = false;

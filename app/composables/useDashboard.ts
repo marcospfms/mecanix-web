@@ -1,3 +1,7 @@
+import type { ComputedRef, Ref } from 'vue';
+import { useAuth } from './useAuth';
+import { useAPI } from './useAPI';
+
 export type DashboardRecentExecution = {
   id: number;
   name: string;
@@ -63,6 +67,11 @@ type DashboardApiPayload = {
   } | null;
 };
 
+type ApiEnvelope<T> = {
+  success: boolean;
+  data: T;
+};
+
 function mapDashboard(payload: DashboardApiPayload): DashboardStats {
   return {
     total_companies: payload.registrations?.total_companies,
@@ -83,43 +92,30 @@ function mapDashboard(payload: DashboardApiPayload): DashboardStats {
   };
 }
 
-export function useDashboard(selectedEmployeeUserId?: Ref<number | null> | ComputedRef<number | null>) {
+export function useDashboard(
+  selectedEmployeeUserId?: Ref<number | null> | ComputedRef<number | null>
+) {
   const auth = useAuth();
-  const runtimeConfig = useRuntimeConfig();
   const employeeUserId = selectedEmployeeUserId ?? computed(() => null);
 
-  const key = computed(() => `dashboard:${employeeUserId.value ?? 'all'}`);
+  const endpoint = computed(() => {
+    const query = new URLSearchParams();
 
-  const dashboard = useAsyncData<DashboardStats | null>(
-    key,
-    async () => {
-      if (!auth.token.value) {
-        return null;
-      }
+    if (employeeUserId.value) {
+      query.set('employee_user_id', String(employeeUserId.value));
+    }
 
-      const headers = new Headers();
-      headers.set('Accept', 'application/json');
-      headers.set('Authorization', `Bearer ${auth.token.value}`);
+    return query.size > 0 ? `/dashboard?${query.toString()}` : '/dashboard';
+  });
 
-      const query = new URLSearchParams();
-
-      if (employeeUserId.value) {
-        query.set('employee_user_id', String(employeeUserId.value));
-      }
-
-      const endpoint = query.size > 0 ? `/dashboard?${query.toString()}` : '/dashboard';
-      const response = await $fetch<{ success: boolean; data: DashboardApiPayload }>(endpoint, {
-        baseURL: runtimeConfig.public.apiUrl,
-        headers
-      });
-
-      return mapDashboard(response.data);
-    },
+  const dashboard = useAPI<ApiEnvelope<DashboardApiPayload>>(
+    () => endpoint.value,
     {
-      server: false,
+      key: () => `dashboard:${employeeUserId.value ?? 'all'}`,
       immediate: false,
-      default: () => null,
-      watch: [employeeUserId]
+      server: false,
+      default: () => ({ success: true, data: {} }),
+      transform: (response) => mapDashboard(response.data)
     }
   );
 
@@ -132,7 +128,7 @@ export function useDashboard(selectedEmployeeUserId?: Ref<number | null> | Compu
 
       if (!token) {
         dashboard.data.value = null;
-        dashboard.error.value = null;
+        dashboard.clear();
         return;
       }
 
@@ -143,4 +139,3 @@ export function useDashboard(selectedEmployeeUserId?: Ref<number | null> | Compu
 
   return dashboard;
 }
-import type { ComputedRef, Ref } from 'vue';
