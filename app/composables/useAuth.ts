@@ -124,10 +124,16 @@ export function useAuth() {
   };
 
   const logout = async () => {
-    token.value = null;
-    user.value = null;
-    hydrated.value = true;
-    await navigateTo('/login');
+    try {
+      if (token.value) {
+        await apiFetch('/logout', { method: 'POST' });
+      }
+    } finally {
+      token.value = null;
+      user.value = null;
+      hydrated.value = true;
+      await navigateTo('/login');
+    }
   };
 
   return {
