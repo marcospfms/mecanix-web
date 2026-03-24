@@ -1,7 +1,10 @@
 <script setup lang="ts">
 const auth = useAuth();
 const mobileMenuOpen = ref(false);
-const brandIconSrc = '/branding/icon-transparent-sm.png';
+const runtimeConfig = useRuntimeConfig();
+const brandIconSrc = `${runtimeConfig.app.baseURL}branding/icon-transparent-sm.png`;
+const userName = computed(() => auth.user.value?.name ?? '');
+const userEmail = computed(() => auth.user.value?.email ?? '');
 
 const navigation = [
   { label: 'Dashboard', to: '/', icon: 'i-lucide-layout-dashboard' },
@@ -46,8 +49,19 @@ const navigation = [
 
         <div class="border-t border-default px-4 py-4">
           <div class="rounded-2xl border border-default bg-default p-4">
-            <p class="text-sm font-medium text-highlighted">{{ auth.user.value?.name }}</p>
-            <p class="mt-1 text-xs text-toned">{{ auth.user.value?.email }}</p>
+            <ClientOnly>
+              <div>
+                <p class="text-sm font-medium text-highlighted">{{ userName }}</p>
+                <p class="mt-1 text-xs text-toned">{{ userEmail }}</p>
+              </div>
+
+              <template #fallback>
+                <div class="space-y-2">
+                  <div class="h-4 w-28 rounded bg-muted" />
+                  <div class="h-3 w-40 rounded bg-muted" />
+                </div>
+              </template>
+            </ClientOnly>
             <div class="mt-3 flex items-center justify-between gap-2">
               <UColorModeButton />
               <UButton
@@ -145,8 +159,19 @@ const navigation = [
 
           <div class="border-t border-default px-4 py-4">
             <div class="rounded-2xl border border-default bg-default p-4">
-              <p class="text-sm font-medium text-highlighted">{{ auth.user.value?.name }}</p>
-              <p class="mt-1 text-xs text-toned">{{ auth.user.value?.email }}</p>
+              <ClientOnly>
+                <div>
+                  <p class="text-sm font-medium text-highlighted">{{ userName }}</p>
+                  <p class="mt-1 text-xs text-toned">{{ userEmail }}</p>
+                </div>
+
+                <template #fallback>
+                  <div class="space-y-2">
+                    <div class="h-4 w-28 rounded bg-muted" />
+                    <div class="h-3 w-40 rounded bg-muted" />
+                  </div>
+                </template>
+              </ClientOnly>
             </div>
           </div>
         </div>
