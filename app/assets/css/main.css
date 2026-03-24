@@ -16,3 +16,19 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+@layer base {
+  :root {
+    --ui-bg: #f4f7f5;
+    --ui-bg-muted: #ebf1ed;
+    --ui-bg-elevated: #e4ebe6;
+    --ui-bg-accented: #dbe5de;
+  }
+
+  .dark {
+    --ui-bg: var(--ui-color-neutral-900);
+    --ui-bg-muted: var(--ui-color-neutral-800);
+    --ui-bg-elevated: var(--ui-color-neutral-800);
+    --ui-bg-accented: var(--ui-color-neutral-700);
+  }
+}

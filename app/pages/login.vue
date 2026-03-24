@@ -7,6 +7,7 @@ const auth = useAuth();
 const runtimeConfig = useRuntimeConfig();
 const googleButton = ref<HTMLDivElement | null>(null);
 const errorMessage = ref<string | null>(null);
+const googleLoading = ref(true);
 
 declare global {
   interface Window {
@@ -30,6 +31,7 @@ const handleCredential = async (response: { credential?: string }) => {
 
   if (!credential) {
     errorMessage.value = 'Não foi possível validar sua conta Google.';
+    googleLoading.value = false;
     return;
   }
 
@@ -40,6 +42,7 @@ const handleCredential = async (response: { credential?: string }) => {
     await navigateTo('/');
   } catch (error: any) {
     errorMessage.value = error?.data?.message ?? error?.message ?? 'Falha ao autenticar.';
+    googleLoading.value = false;
   }
 };
 
@@ -73,8 +76,11 @@ const ensureGoogleScript = async () => {
 };
 
 onMounted(async () => {
+  googleLoading.value = true;
+
   if (!runtimeConfig.public.googleClientId) {
     errorMessage.value = 'O acesso não está configurado neste ambiente.';
+    googleLoading.value = false;
     return;
   }
 
@@ -95,29 +101,21 @@ onMounted(async () => {
       type: 'standard',
       theme: 'outline',
       size: 'large',
-      width: 320,
+      width: Math.min(320, Math.max(220, googleButton.value.clientWidth || 0)),
       text: 'signin_with',
       shape: 'pill'
     });
+    googleLoading.value = false;
   } catch {
     errorMessage.value = 'Não foi possível carregar o acesso neste momento.';
+    googleLoading.value = false;
   }
 });
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="flex justify-center lg:hidden">
-      <div class="rounded-3xl border border-default bg-default px-5 py-4">
-        <img
-          src="/branding/logo-transparent.png"
-          alt="Mecanix"
-          class="h-10 w-auto"
-        />
-      </div>
-    </div>
-
-    <UCard class="rounded-[2rem] border-default bg-default shadow-xl">
+  <div class="w-full min-w-0 space-y-4 sm:space-y-6">
+    <UCard class="w-full min-w-0 overflow-hidden rounded-[1.75rem] border-default bg-default/92 shadow-lg sm:rounded-[2rem] sm:shadow-xl">
       <template #header>
         <div class="space-y-3">
           <div class="flex items-center justify-between gap-3">
@@ -125,7 +123,7 @@ onMounted(async () => {
               <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
                 Acesso
               </p>
-              <h2 class="mt-2 text-2xl font-semibold tracking-tight text-highlighted">
+              <h2 class="mt-2 text-[1.65rem] font-semibold tracking-tight text-highlighted sm:text-2xl">
                 Entre na sua conta
               </h2>
             </div>
@@ -136,12 +134,12 @@ onMounted(async () => {
           </div>
 
           <p class="text-sm leading-6 text-toned">
-            Continue de onde parou e acompanhe a operação da oficina com uma visão mais ampla.
+            Continue de onde parou e acompanhe a oficina com mais contexto e organização.
           </p>
         </div>
       </template>
 
-      <div class="space-y-5">
+      <div class="space-y-4 sm:space-y-5">
         <UAlert
           v-if="errorMessage"
           color="error"
@@ -150,34 +148,39 @@ onMounted(async () => {
           :description="errorMessage"
         />
 
-        <div class="rounded-[1.5rem] border border-default bg-muted/30 p-5">
-          <div class="mb-5 flex items-start gap-3">
-            <div class="rounded-2xl bg-primary/10 p-2.5 text-primary">
-              <UIcon name="i-lucide-badge-check" class="size-5" />
+        <div class="rounded-[1.5rem] border border-default bg-muted/55 p-4 sm:p-5">
+          <div class="mb-4 flex items-start gap-3 sm:mb-5">
+            <div class="rounded-xl bg-primary/10 p-2 text-primary">
+              <UIcon name="i-lucide-badge-check" class="size-4.5" />
             </div>
-            <div class="space-y-1">
+            <div class="space-y-0.5">
               <p class="text-sm font-semibold text-highlighted">Entrada protegida</p>
-              <p class="text-sm leading-6 text-toned">
-                Use a mesma conta do Mecanix para continuar com segurança e manter seus dados
-                sincronizados.
+              <p class="text-xs leading-5 text-toned">
+                Use a mesma conta cadastrada no app.
               </p>
             </div>
           </div>
 
-          <div class="flex justify-center">
-            <div ref="googleButton" />
+          <div class="flex flex-col items-center overflow-hidden rounded-2xl">
+            <div
+              v-if="googleLoading"
+              class="flex h-11 w-[220px] items-center justify-center rounded-full border border-default bg-default"
+            >
+              <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-primary" />
+            </div>
+            <div ref="googleButton" class="flex justify-center" />
           </div>
         </div>
 
-        <div class="grid gap-3 text-sm text-toned">
-          <div class="flex items-center gap-3 rounded-2xl border border-default bg-muted/20 px-4 py-3">
+        <div class="hidden gap-2.5 text-sm text-toned sm:grid">
+          <div class="flex items-center gap-3 rounded-2xl border border-default bg-elevated/80 px-4 py-3">
             <div class="rounded-xl bg-primary/10 p-2 text-primary">
               <UIcon name="i-lucide-panel-top" class="size-4" />
             </div>
             <span>Ambiente pensado para acompanhamento e gestão.</span>
           </div>
 
-          <div class="flex items-center gap-3 rounded-2xl border border-default bg-muted/20 px-4 py-3">
+          <div class="flex items-center gap-3 rounded-2xl border border-default bg-elevated/80 px-4 py-3">
             <div class="rounded-xl bg-primary/10 p-2 text-primary">
               <UIcon name="i-lucide-refresh-cw" class="size-4" />
             </div>
