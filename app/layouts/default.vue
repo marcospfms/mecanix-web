@@ -11,6 +11,7 @@ const navigation = [
   { label: 'Checklists', to: { name: 'checklists' }, icon: 'i-lucide-clipboard-check' },
   { label: 'Empresas', to: { name: 'companies' }, icon: 'i-lucide-building-2' },
   { label: 'Clientes', to: { name: 'customers' }, icon: 'i-lucide-users' },
+  { label: 'Veículos', to: { name: 'vehicles' }, icon: 'i-lucide-car-front' },
   { label: 'Funcionários', to: { name: 'employees' }, icon: 'i-lucide-user-round-cog' },
   { label: 'Perfil', to: { name: 'profile' }, icon: 'i-lucide-user-circle-2' }
 ];

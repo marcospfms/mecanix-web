@@ -100,7 +100,11 @@ const handleRefresh = async () => {
       <section class="space-y-3">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-lg font-semibold text-highlighted">Veículos vinculados</h2>
-          <UButton color="primary" icon="i-lucide-plus" disabled>
+          <UButton
+            color="primary"
+            icon="i-lucide-plus"
+            :to="{ name: 'vehicles', query: { open: 'create', customerId: String(customer.id) } }"
+          >
             Novo veículo
           </UButton>
         </div>
@@ -149,6 +153,17 @@ const handleRefresh = async () => {
                   <p class="font-medium text-highlighted">Checklists</p>
                   <p>{{ vehicle.checklists_done ?? 0 }}/{{ vehicle.checklists_total ?? 0 }}</p>
                 </div>
+              </div>
+
+              <div class="flex justify-end border-t border-default/70 pt-3">
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-arrow-up-right"
+                  :to="{ name: 'vehicles-vehicleId', params: { vehicleId: String(vehicle.id) } }"
+                >
+                  Ver veículo
+                </UButton>
               </div>
             </div>
           </UCard>
