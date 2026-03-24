@@ -15,8 +15,16 @@ App web (Nuxt 4 + Nuxt UI v4) para donos de oficina acompanharem dados e realiza
 | UI              | Nuxt UI v4 + TailwindCSS v4                                  |
 | Ícones          | `@iconify-json/lucide` + `@iconify-json/simple-icons`        |
 | HTTP            | `$fetch` nativo do Nuxt + composables personalizados         |
-| Auth            | Token Sanctum persistido em cookie (owners via Google OAuth) |
-| Package manager | pnpm                                                         |
+| Auth            | Google OAuth iniciado no frontend + token Sanctum persistido para consumo da API |
+| Package manager | yarn                                                         |
+
+## Premissas de arquitetura
+
+- O `mecanix-client` é um **app fechado e autenticado**, sem landing pública neste projeto
+- Estratégia de render principal: **SPA autenticada**
+- A página `/` é protegida e não deve ser prerenderizada
+- Apenas **owners** acessam o client web
+- Funcionários devem ser barrados mesmo que autentiquem com sucesso no fluxo técnico
 
 ## Variáveis de ambiente
 
@@ -39,14 +47,17 @@ NUXT_PUBLIC_APP_URL=http://localhost:3000
 - [ ] `logout()` — chama `POST /api/logout`, apaga cookie e redireciona para `/login`
 - [ ] `refresh()` — chama `GET /api/me` para reidratar usuário ao recarregar página
 - [ ] Plugin `auth.client.ts` — executa `refresh()` no startup do app
+- [ ] Regra adicional: se `user.is_employee === true`, impedir acesso ao client web e encerrar sessão/redirect
 
 ### Páginas
 
 - [ ] `/login` — tela de login:
-  - Botão "Entrar com Google" (redireciona para OAuth do Google via mecanix-core)
+  - Botão "Entrar com Google"
+  - OAuth iniciado no frontend Nuxt e finalizado contra `POST /api/auth/google`
   - Estado de loading durante autenticação
 - [ ] `/oauthredirect` — recebe o token do Google OAuth, persiste e redireciona para `/`
 - [ ] Middleware global `auth.ts` — redireciona para `/login` se não autenticado; redireciona para `/` se já autenticado e tentar acessar `/login`
+- [ ] Middleware/named guard complementar `owner-only` — bloqueia funcionário autenticado
 
 ### Tipos base
 
@@ -114,6 +125,8 @@ interface User {
 - [ ] Filtro de funcionário (select) — retorna stats filtradas do mesmo endpoint
 - [ ] Botão de atualizar (refresh)
 - [ ] Composable `useDashboard()` com `data`, `loading`, `refresh()`
+
+> Observação: como o projeto é uma SPA autenticada, o dashboard deve depender de fetch client-side / hydrated data, não de prerender.
 
 ---
 
