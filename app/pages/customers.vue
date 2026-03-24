@@ -49,6 +49,8 @@ const isListRefreshing = computed(() => manualRefreshing.value);
 const taxIdDigitsCount = computed(() => taxId.value.replace(/\D/g, '').length);
 const phoneDigitsCount = computed(() => phone.value.replace(/\D/g, '').length);
 
+const taxIdKind = (value: string) => (value.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF');
+
 const resetForm = () => {
   name.value = '';
   taxId.value = '';
@@ -226,7 +228,7 @@ const handleRefresh = async () => {
           </p>
         </div>
 
-        <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
+        <UButton color="primary" icon="i-lucide-plus" class="self-start sm:self-auto" @click="openCreate">
           Novo cliente
         </UButton>
       </div>
@@ -297,47 +299,61 @@ const handleRefresh = async () => {
           :key="customer.id"
           class="w-full rounded-2xl border-default"
         >
-          <div class="flex flex-col gap-4">
+          <div
+            class="space-y-4 cursor-pointer rounded-xl transition-colors hover:bg-muted/20"
+            role="button"
+            tabindex="0"
+            @click="openDetails(customer)"
+            @keydown.enter.prevent="openDetails(customer)"
+            @keydown.space.prevent="openDetails(customer)"
+          >
             <div class="flex items-start justify-between gap-4">
-              <div class="flex items-start gap-4">
-                <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-muted/30">
+              <div class="flex min-w-0 items-start gap-4">
+                <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]">
                   <span class="text-base font-semibold uppercase tracking-[0.08em] text-primary">
                     {{ customer.name.slice(0, 2) }}
                   </span>
                 </div>
 
-                <div class="space-y-1">
-                  <p class="text-base font-semibold text-highlighted">{{ customer.name }}</p>
-                  <p class="text-sm text-toned">{{ formatTaxId(customer.tax_id) }}</p>
+                <div class="min-w-0 space-y-2">
+                  <div class="flex min-w-0 flex-wrap items-center gap-2">
+                    <p class="truncate text-base font-semibold text-highlighted">{{ customer.name }}</p>
+                    <span class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                      {{ taxIdKind(customer.tax_id) }}
+                    </span>
+                  </div>
+
+                  <p class="font-mono text-sm tracking-[0.04em] text-toned">
+                    {{ formatTaxId(customer.tax_id) }}
+                  </p>
                 </div>
               </div>
 
-              <UButton
-                color="neutral"
-                variant="ghost"
-                icon="i-lucide-chevron-right"
-                aria-label="Abrir cliente"
-                @click="openDetails(customer)"
-              />
             </div>
 
-            <div class="grid gap-3 text-sm text-toned sm:grid-cols-2">
-              <div>
-                <p class="font-medium text-highlighted">Telefone</p>
-                <p>{{ formatBrPhone(customer.phone) }}</p>
+            <div class="flex flex-wrap gap-2 text-sm">
+              <div class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned">
+                <UIcon name="i-lucide-phone" class="size-4 shrink-0 text-primary" />
+                <span class="truncate">{{ formatBrPhone(customer.phone) }}</span>
               </div>
-              <div>
-                <p class="font-medium text-highlighted">E-mail</p>
-                <p>{{ customer.email || '-' }}</p>
+              <div class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned">
+                <UIcon name="i-lucide-mail" class="size-4 shrink-0 text-primary" />
+                <span class="truncate">{{ customer.email || 'Sem e-mail' }}</span>
               </div>
             </div>
 
-            <div class="flex gap-2 sm:justify-end">
+            <div class="flex items-center justify-between gap-3 border-t border-default/70 pt-3">
+              <div class="inline-flex items-center gap-2 text-sm font-medium text-primary">
+                <UIcon name="i-lucide-panel-top" class="size-4" />
+                <span>Ver detalhes</span>
+              </div>
+
+              <div class="flex gap-2 sm:justify-end">
               <UButton
                 color="neutral"
                 variant="soft"
                 icon="i-lucide-pencil"
-                @click="openEdit(customer)"
+                @click.stop="openEdit(customer)"
               >
                 Editar
               </UButton>
@@ -345,10 +361,11 @@ const handleRefresh = async () => {
                 color="error"
                 variant="soft"
                 icon="i-lucide-trash"
-                @click="askDelete(customer)"
+                @click.stop="askDelete(customer)"
               >
                 Excluir
               </UButton>
+              </div>
             </div>
           </div>
         </UCard>
