@@ -34,6 +34,31 @@ export type VehicleMileageHistory = {
   updated_at: string;
 };
 
+export type VehicleChecklistExecutor = {
+  id: number;
+  name: string;
+  username: string | null;
+} | null;
+
+export type VehicleChecklistStats = {
+  total: number;
+  completed: number;
+  open: number;
+};
+
+export type VehicleChecklist = {
+  id: number;
+  vehicle_id: number;
+  user_id?: number | null;
+  name: string;
+  is_completed: boolean;
+  completed_at: string | null;
+  executed_by?: VehicleChecklistExecutor;
+  stats?: VehicleChecklistStats;
+  created_at: string;
+  updated_at: string;
+};
+
 type ApiEnvelope<T> = {
   success: boolean;
   data: T;
@@ -91,7 +116,7 @@ export function useVehicles() {
     key: 'vehicles:list',
     immediate: false,
     server: false,
-    default: () => ({ success: true, data: [] }),
+    default: () => [],
     transform: (response) => response.data
   });
 
@@ -113,7 +138,8 @@ export function useVehicles() {
 
   const filteredVehicles = computed(() => {
     const term = search.value.trim().toLowerCase();
-    const list = [...(vehiclesState.data.value ?? [])].sort((a, b) => b.id - a.id);
+    const source = Array.isArray(vehiclesState.data.value) ? vehiclesState.data.value : [];
+    const list = [...source].sort((a, b) => b.id - a.id);
 
     if (!term) {
       return list;
@@ -219,7 +245,7 @@ export function useVehicle(vehicleId: Ref<number | null> | ComputedRef<number | 
       key: () => `vehicles:${vehicleId.value ?? 'none'}`,
       immediate: false,
       server: false,
-      default: () => ({ success: true, data: null as unknown as Vehicle }),
+      default: () => null,
       transform: (response) => response.data
     }
   );
@@ -252,7 +278,7 @@ export function useMileageHistory(vehicleId: Ref<number | null> | ComputedRef<nu
       key: () => `vehicles:${vehicleId.value ?? 'none'}:mileage-history`,
       immediate: false,
       server: false,
-      default: () => ({ success: true, data: [] }),
+      default: () => [],
       transform: (response) => response.data
     }
   );
@@ -273,7 +299,10 @@ export function useMileageHistory(vehicleId: Ref<number | null> | ComputedRef<nu
     { immediate: true }
   );
 
-  const latestMileage = computed(() => mileageState.data.value?.[0] ?? null);
+  const latestMileage = computed(() => {
+    const history = Array.isArray(mileageState.data.value) ? mileageState.data.value : [];
+    return history[0] ?? null;
+  });
 
   const createMileage = async (payload: MileageFormPayload) => {
     const response = await useApiFetch<ApiEnvelope<VehicleMileageHistory>>('/vehicle-mileage-history', {
@@ -318,5 +347,49 @@ export function useMileageHistory(vehicleId: Ref<number | null> | ComputedRef<nu
     createMileage,
     updateMileage,
     deleteMileage
+  };
+}
+
+export function useVehicleChecklists(vehicleId: Ref<number | null> | ComputedRef<number | null>) {
+  const auth = useAuth();
+
+  const checklistsState = useAPI<ApiEnvelope<VehicleChecklist[]>>(
+    () => `/vehicles/${vehicleId.value}/checklists`,
+    {
+      key: () => `vehicles:${vehicleId.value ?? 'none'}:checklists`,
+      immediate: false,
+      server: false,
+      default: () => [],
+      transform: (response) => response.data
+    }
+  );
+
+  watch(
+    [() => auth.hydrated.value, () => auth.token.value, () => vehicleId.value],
+    async ([hydrated, token, id]) => {
+      if (!hydrated || !id) return;
+
+      if (!token) {
+        checklistsState.data.value = [];
+        checklistsState.clear();
+        return;
+      }
+
+      await checklistsState.refresh();
+    },
+    { immediate: true }
+  );
+
+  const recentChecklists = computed(() => {
+    const items = Array.isArray(checklistsState.data.value) ? checklistsState.data.value : [];
+    return items.slice(0, 5);
+  });
+
+  return {
+    checklists: checklistsState.data,
+    recentChecklists,
+    status: checklistsState.status,
+    error: checklistsState.error,
+    refresh: checklistsState.refresh
   };
 }

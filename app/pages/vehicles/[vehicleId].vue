@@ -5,6 +5,7 @@ import {
   formatLicensePlate,
   formatMileage,
   mileageSourceLabel,
+  useVehicleChecklists,
   useMileageHistory,
   useVehicle,
   useVehicleActions
@@ -32,6 +33,12 @@ const {
   updateMileage,
   deleteMileage
 } = useMileageHistory(vehicleId);
+const {
+  recentChecklists,
+  status: checklistsStatus,
+  error: checklistsError,
+  refresh: refreshChecklists
+} = useVehicleChecklists(vehicleId);
 const { updateVehicle, deleteVehicle } = useVehicleActions();
 
 const vehicleFormOpen = ref(false);
@@ -58,7 +65,8 @@ const mileageFormErrors = ref<{ mileage?: string }>({});
 const isLoading = computed(
   () =>
     (status.value === 'pending' && !vehicle.value) ||
-    (mileageStatus.value === 'pending' && !history.value)
+    (mileageStatus.value === 'pending' && !history.value) ||
+    (checklistsStatus.value === 'pending' && !recentChecklists.value)
 );
 const isDataRefreshing = computed(() => manualRefreshing.value && !!vehicle.value);
 const mileageItems = computed(() => history.value ?? []);
@@ -287,6 +295,7 @@ const handleRefresh = async () => {
     await Promise.all([
       refresh(),
       refreshMileage(),
+      refreshChecklists(),
       new Promise((resolve) => setTimeout(resolve, 1000))
     ]);
   } catch {
@@ -336,7 +345,7 @@ const handleRefresh = async () => {
     />
 
     <UAlert
-      v-else-if="error || mileageError"
+      v-else-if="error || mileageError || checklistsError"
       color="error"
       variant="soft"
       icon="i-lucide-circle-alert"
@@ -500,6 +509,88 @@ const handleRefresh = async () => {
               <div v-if="item.notes" class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Observações</p>
                 <p class="mt-2 text-sm leading-6 text-toned">{{ item.notes }}</p>
+              </div>
+            </div>
+          </UCard>
+        </div>
+      </section>
+
+      <section class="space-y-3">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold text-highlighted">Últimos checklists</h2>
+            <p class="text-sm text-toned">
+              As execuções mais recentes deste veículo aparecem aqui para consulta rápida.
+            </p>
+          </div>
+        </div>
+
+        <AppEmpty
+          v-if="recentChecklists.length === 0"
+          title="Nenhum checklist executado"
+          description="As próximas execuções deste veículo aparecerão aqui."
+          icon="i-lucide-clipboard-check"
+        />
+
+        <div v-else class="grid gap-3">
+          <UCard
+            v-for="checklist in recentChecklists"
+            :key="checklist.id"
+            class="rounded-2xl border-default"
+          >
+            <div class="space-y-4">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div class="space-y-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="text-base font-semibold text-highlighted">
+                      {{ checklist.name }}
+                    </p>
+                    <span
+                      class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
+                      :class="
+                        checklist.is_completed
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-warning/10 text-warning'
+                      "
+                    >
+                      {{ checklist.is_completed ? 'Concluído' : 'Rascunho' }}
+                    </span>
+                  </div>
+
+                  <div class="flex flex-wrap gap-4 text-sm text-toned">
+                    <div class="inline-flex items-center gap-2">
+                      <UIcon name="i-lucide-calendar-clock" class="size-4 text-primary" />
+                      <NuxtTime
+                        :datetime="checklist.created_at"
+                        year="numeric"
+                        month="2-digit"
+                        day="2-digit"
+                        hour="2-digit"
+                        minute="2-digit"
+                      />
+                    </div>
+
+                    <div class="inline-flex items-center gap-2">
+                      <UIcon name="i-lucide-user-round" class="size-4 text-primary" />
+                      <span>{{ checklist.executed_by?.name || 'Sem executor identificado' }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  v-if="checklist.stats"
+                  class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
+                >
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    Progresso
+                  </p>
+                  <p class="mt-1 text-sm font-medium text-highlighted">
+                    {{ checklist.stats.completed }}/{{ checklist.stats.total }} itens
+                  </p>
+                  <p class="mt-1 text-xs text-toned">
+                    {{ checklist.stats.open }} em aberto
+                  </p>
+                </div>
               </div>
             </div>
           </UCard>

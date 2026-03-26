@@ -59,12 +59,14 @@ const formDescription = computed(() =>
     : 'Atualize os dados do veículo selecionado.'
 );
 const plateCharsCount = computed(() => licensePlate.value.replace(/[^a-zA-Z0-9]/g, '').length);
-const customerOptions = computed(() =>
-  (rawCustomers.value ?? []).map((customer) => ({
+const customerOptions = computed(() => {
+  const customers = Array.isArray(rawCustomers.value) ? rawCustomers.value : [];
+
+  return customers.map((customer) => ({
     label: customer.name,
     value: customer.id
-  }))
-);
+  }));
+});
 
 watch(
   () => vehicles.value.length,
@@ -299,56 +301,26 @@ const loadMore = () => {
 
     <div class="space-y-4">
       <div class="flex items-center gap-2">
-        <UInput
-          v-model="search"
-          placeholder="Buscar por placa, modelo ou cliente"
-          icon="i-lucide-search"
-          size="xl"
-          class="flex-1"
-        >
+        <UInput v-model="search" placeholder="Buscar por placa, modelo ou cliente" icon="i-lucide-search" size="xl"
+          class="flex-1">
           <template v-if="search" #trailing>
-            <UButton
-              color="neutral"
-              variant="link"
-              size="sm"
-              icon="i-lucide-circle-x"
-              aria-label="Limpar busca"
-              @click="search = ''"
-            />
+            <UButton color="neutral" variant="link" size="sm" icon="i-lucide-circle-x" aria-label="Limpar busca"
+              @click="search = ''" />
           </template>
         </UInput>
 
-        <UButton
-          color="neutral"
-          variant="soft"
-          icon="i-lucide-refresh-cw"
-          size="xl"
-          aria-label="Atualizar veículos"
-          @click="handleRefresh"
-        />
+        <UButton color="neutral" variant="soft" icon="i-lucide-refresh-cw" size="xl" aria-label="Atualizar veículos"
+          @click="handleRefresh" />
       </div>
 
-      <AppLoading
-        v-if="isLoading || isListRefreshing"
-        title="Carregando veículos"
-        description="Buscando os veículos cadastrados na operação."
-      />
+      <AppLoading v-if="isLoading || isListRefreshing" title="Carregando veículos"
+        description="Buscando os veículos cadastrados na operação." />
 
-      <UAlert
-        v-else-if="error"
-        color="error"
-        variant="soft"
-        icon="i-lucide-circle-alert"
-        title="Falha ao carregar veículos"
-        description="Atualize a página ou tente novamente em instantes."
-      />
+      <UAlert v-else-if="error" color="error" variant="soft" icon="i-lucide-circle-alert"
+        title="Falha ao carregar veículos" description="Atualize a página ou tente novamente em instantes." />
 
-      <AppEmpty
-        v-else-if="!hasVehicles"
-        title="Nenhum veículo cadastrado"
-        description="Adicione o primeiro veículo para começar a organizar a base."
-        icon="i-lucide-car-front"
-      >
+      <AppEmpty v-else-if="!hasVehicles" title="Nenhum veículo cadastrado"
+        description="Adicione o primeiro veículo para começar a organizar a base." icon="i-lucide-car-front">
         <div class="pt-2">
           <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
             Criar primeiro veículo
@@ -358,22 +330,14 @@ const loadMore = () => {
 
       <template v-else>
         <div class="grid gap-3">
-          <UCard
-            v-for="vehicle in displayedVehicles"
-            :key="vehicle.id"
-            class="w-full rounded-2xl border-default"
-          >
-            <div
-              class="space-y-4 cursor-pointer rounded-xl transition-colors hover:bg-muted/20"
-              role="button"
-              tabindex="0"
-              @click="openDetails(vehicle)"
-              @keydown.enter.prevent="openDetails(vehicle)"
-              @keydown.space.prevent="openDetails(vehicle)"
-            >
+          <UCard v-for="vehicle in displayedVehicles" :key="vehicle.id" class="w-full rounded-2xl border-default">
+            <div class="space-y-4 cursor-pointer rounded-xl transition-colors hover:bg-muted/20" role="button"
+              tabindex="0" @click="openDetails(vehicle)" @keydown.enter.prevent="openDetails(vehicle)"
+              @keydown.space.prevent="openDetails(vehicle)">
               <div class="flex items-start justify-between gap-4">
                 <div class="flex min-w-0 items-start gap-4">
-                  <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]">
+                  <div
+                    class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]">
                     <UIcon name="i-lucide-car-front" class="size-6 text-primary" />
                   </div>
 
@@ -382,7 +346,8 @@ const loadMore = () => {
                       <p class="truncate text-base font-semibold text-highlighted">
                         {{ formatLicensePlate(vehicle.license_plate) }}
                       </p>
-                      <span class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                      <span
+                        class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                         {{ vehicle.customer?.name || 'Sem cliente' }}
                       </span>
                     </div>
@@ -395,28 +360,28 @@ const loadMore = () => {
               </div>
 
               <div class="flex flex-wrap gap-2 text-sm">
-                <div class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned">
+                <div
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned">
                   <UIcon name="i-lucide-users" class="size-4 shrink-0 text-primary" />
                   <span class="truncate">
                     {{ vehicle.customer?.name || 'Cliente não vinculado' }}
                   </span>
                 </div>
 
-                <div class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned">
+                <div
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned">
                   <UIcon name="i-lucide-calendar-range" class="size-4 shrink-0 text-primary" />
                   <span class="truncate">{{ vehicle.model_year || 'Ano não informado' }}</span>
                 </div>
 
-                <div class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned">
+                <div
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned">
                   <UIcon name="i-lucide-palette" class="size-4 shrink-0 text-primary" />
                   <span class="truncate">{{ vehicle.color || 'Cor não informada' }}</span>
                 </div>
               </div>
 
-              <div
-                v-if="vehicle.customer"
-                class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
-              >
+              <div v-if="vehicle.customer" class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                   Cliente
                 </p>
@@ -435,20 +400,10 @@ const loadMore = () => {
                 </div>
 
                 <div class="flex gap-2 sm:justify-end">
-                  <UButton
-                    color="neutral"
-                    variant="soft"
-                    icon="i-lucide-pencil"
-                    @click.stop="openEdit(vehicle)"
-                  >
+                  <UButton color="neutral" variant="soft" icon="i-lucide-pencil" @click.stop="openEdit(vehicle)">
                     Editar
                   </UButton>
-                  <UButton
-                    color="error"
-                    variant="soft"
-                    icon="i-lucide-trash"
-                    @click.stop="askDelete(vehicle)"
-                  >
+                  <UButton color="error" variant="soft" icon="i-lucide-trash" @click.stop="askDelete(vehicle)">
                     Excluir
                   </UButton>
                 </div>
@@ -458,39 +413,24 @@ const loadMore = () => {
         </div>
 
         <div v-if="hasMoreVehicles" class="flex justify-center pt-2">
-          <UButton
-            color="neutral"
-            variant="soft"
-            icon="i-lucide-chevron-down"
-            @click="loadMore"
-          >
+          <UButton color="neutral" variant="soft" icon="i-lucide-chevron-down" @click="loadMore">
             Carregar mais
           </UButton>
         </div>
       </template>
     </div>
 
-    <USlideover
-      v-model:open="formOpen"
-      side="right"
-      :title="formTitle"
-      :description="formDescription"
-      :ui="{ body: 'px-3 py-4 sm:px-4 sm:py-5', footer: 'justify-end px-3 sm:px-4' }"
-    >
+    <USlideover v-model:open="formOpen" side="right" :title="formTitle" :description="formDescription"
+      :ui="{ body: 'px-3 py-4 sm:px-4 sm:py-5', footer: 'justify-end px-3 sm:px-4' }">
       <template #body>
         <div class="space-y-4">
           <div class="space-y-2">
             <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               Cliente
             </label>
-            <USelect
-              v-model="customerId"
-              :items="customerOptions"
-              :disabled="formMode === 'edit' || customersStatus === 'pending'"
-              placeholder="Selecione o cliente"
-              size="xl"
-              class="w-full"
-            />
+            <USelect v-model="customerId" :items="customerOptions"
+              :disabled="formMode === 'edit' || customersStatus === 'pending'" placeholder="Selecione o cliente"
+              size="xl" class="w-full" />
             <p v-if="formErrors.customer_id" class="text-sm text-error">
               {{ formErrors.customer_id }}
             </p>
@@ -500,13 +440,7 @@ const loadMore = () => {
             <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               Placa
             </label>
-            <UInput
-              v-model="licensePlate"
-              placeholder="ABC-1234"
-              size="xl"
-              class="w-full"
-              :maxlength="8"
-            />
+            <UInput v-model="licensePlate" placeholder="ABC-1234" size="xl" class="w-full" :maxlength="8" />
             <p class="text-right text-xs text-toned">{{ plateCharsCount }}/7</p>
             <p v-if="formErrors.license_plate" class="text-sm text-error">
               {{ formErrors.license_plate }}
@@ -517,13 +451,7 @@ const loadMore = () => {
             <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               Modelo
             </label>
-            <UInput
-              v-model="model"
-              placeholder="Ex.: Onix LT"
-              size="xl"
-              class="w-full"
-              :maxlength="100"
-            />
+            <UInput v-model="model" placeholder="Ex.: Onix LT" size="xl" class="w-full" :maxlength="100" />
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
@@ -531,14 +459,8 @@ const loadMore = () => {
               <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
                 Ano
               </label>
-              <UInput
-                v-model="modelYear"
-                placeholder="2024"
-                size="xl"
-                class="w-full"
-                inputmode="numeric"
-                :maxlength="4"
-              />
+              <UInput v-model="modelYear" placeholder="2024" size="xl" class="w-full" inputmode="numeric"
+                :maxlength="4" />
               <p v-if="formErrors.model_year" class="text-sm text-error">
                 {{ formErrors.model_year }}
               </p>
@@ -548,13 +470,7 @@ const loadMore = () => {
               <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
                 Cor
               </label>
-              <UInput
-                v-model="color"
-                placeholder="Ex.: Preto"
-                size="xl"
-                class="w-full"
-                :maxlength="50"
-              />
+              <UInput v-model="color" placeholder="Ex.: Preto" size="xl" class="w-full" :maxlength="50" />
             </div>
           </div>
         </div>
@@ -570,13 +486,8 @@ const loadMore = () => {
       </template>
     </USlideover>
 
-    <AppConfirm
-      v-model:open="confirmOpen"
-      title="Excluir veículo"
+    <AppConfirm v-model:open="confirmOpen" title="Excluir veículo"
       :description="vehiclePendingDeletion ? `Você está removendo ${formatLicensePlate(vehiclePendingDeletion.license_plate)}. Esta ação não pode ser desfeita.` : 'Esta ação não pode ser desfeita.'"
-      confirm-label="Excluir"
-      :loading="confirmLoading"
-      @confirm="handleDelete"
-    />
+      confirm-label="Excluir" :loading="confirmLoading" @confirm="handleDelete" />
   </div>
 </template>

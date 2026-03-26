@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { formatLicensePlate } from '../../composables/useVehicles';
+
 definePageMeta({
   title: 'Detalhes do cliente'
 });

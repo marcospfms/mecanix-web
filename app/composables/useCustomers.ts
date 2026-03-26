@@ -72,16 +72,6 @@ export function formatBrPhone(value?: string | null) {
     .replace(/(\d{5})(\d)/, '$1-$2');
 }
 
-export function formatLicensePlate(value: string) {
-  const clean = value.replace(/\s+/g, '').toUpperCase();
-
-  if (clean.length === 7) {
-    return `${clean.slice(0, 3)}-${clean.slice(3)}`;
-  }
-
-  return clean;
-}
-
 export function useCustomers() {
   const auth = useAuth();
   const search = ref('');
