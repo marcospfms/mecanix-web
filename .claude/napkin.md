@@ -21,11 +21,23 @@
 1. **[2026-03-24] Sempre usar a skill `nuxt`**
    Do instead: consultar primeiro os padrões de Nuxt 4 antes de editar rotas, layouts, middleware, plugins ou composables do `mecanix-client`.
 
-2. **[2026-03-24] Componentes Nuxt UI precisam seguir contrato acessível**
+2. **[2026-03-26] `useAPI` com `transform` exige shape coerente no `default`**
+   Do instead: quando `transform` devolve `response.data`, tipar o composable pelo shape transformado (`T`) e usar `default` compatível (`[]`, `null`, `{}`), sem manter envelope no estado final.
+
+3. **[2026-03-26] Auto-import do Nuxt colide helpers com o mesmo nome**
+   Do instead: manter helpers compartilhados em um único composable de domínio ou importar explicitamente a origem quando houver risco de duplicidade, em vez de exportar o mesmo nome em múltiplos arquivos.
+
+4. **[2026-03-26] Typed router ligado exige `useRoute()` tipado e navegação nomeada**
+   Do instead: com `typedPages` ativo, preferir `useRoute('nome-da-rota')` e `navigateTo({ name: 'rota', params })`, evitando rota genérica/string quando a rota já existe no mapa tipado.
+
+5. **[2026-03-26] Rotas pai com filhos precisam de `NuxtPage`**
+   Do instead: quando existir `app/pages/foo.vue` junto com `app/pages/foo/...`, transformar `foo.vue` em wrapper com `<NuxtPage />` e mover a tela real para `foo/index.vue`.
+
+6. **[2026-03-24] Componentes Nuxt UI precisam seguir contrato acessível**
    Do instead: ao usar `USlideover`, `UModal` e afins, sempre fornecer `title` e `description` ou slots equivalentes compatíveis com a versão atual.
 
-3. **[2026-03-24] SPA autenticada consumindo o `mecanix-core`**
+7. **[2026-03-24] SPA autenticada consumindo o `mecanix-core`**
    Do instead: iniciar Google no frontend, trocar token em `POST /api/auth/google` e tratar o app como painel fechado sem prerender da home.
 
-4. **[2026-03-24] Refresh manual deve dar feedback visível**
+8. **[2026-03-24] Refresh manual deve dar feedback visível**
    Do instead: quando houver botão de atualizar em listas, usar loading na área de conteúdo por pelo menos 1 segundo para o usuário perceber a ação.

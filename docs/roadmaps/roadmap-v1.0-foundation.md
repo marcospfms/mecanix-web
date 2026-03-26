@@ -1,6 +1,6 @@
 # Roadmap V1.0 — Fundação (Mecanix Client)
 
-> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída · Fase 4 concluída · Fase 5 em andamento  
+> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída · Fase 4 concluída · Fase 5 concluída · Fase 6 em andamento · Fase 7 em andamento  
 > **Referência app mobile**: `mecanix-app/` — todas as funcionalidades abaixo espelham o app, exceto assinatura/pagamento
 
 ## Objetivo
@@ -46,7 +46,7 @@ NUXT_PUBLIC_APP_URL=http://localhost:3000
 - [x] `login(googleToken)` — chama `POST /api/auth/google`, persiste token
 - [x] `logout()` — chama `POST /api/logout`, apaga cookie e redireciona para `/login`
 - [x] `refresh()` — chama `GET /api/me` para reidratar usuário ao recarregar página
-- [x] Plugin `auth.client.ts` — executa `refresh()` no startup do app
+- [x] Reidratação centralizada no fluxo atual de auth/middleware — executa `refresh()` quando houver sessão válida, sem plugin duplicado
 - [x] Regra adicional: se `user.is_employee === true`, impedir acesso ao client web e encerrar sessão/redirect
 
 ### Páginas
@@ -193,7 +193,7 @@ interface User {
 | `phone`  | Telefone com link WhatsApp (`wa.me/55{ddd}{number}`) |
 | `email`  | E-mail com link `mailto:`                            |
 
-> Situação atual da fase 5: parcialmente concluída. A listagem, formulário e detalhe do cliente já existem, mas ainda falta amadurecer a UX do card e plugar as ações úteis de contato/veículos para fechar a fase com o mesmo nível de polimento de `companies`.
+> Situação atual da fase 5: concluída. A listagem, os formulários, o detalhe do cliente e a integração com veículos já estão implantados no client web com o mesmo padrão-base adotado nos módulos anteriores.
 
 ---
 
@@ -203,25 +203,25 @@ interface User {
 > **Mileage**: `GET|POST|PUT|DELETE /api/vehicle-mileage-history` · `GET /api/vehicles/{id}/mileage-history`  
 > **Referência**: `mecanix-app/app/(tabs)/manage/customers/[id]/vehicles/`
 
-- [ ] Página `/vehicles` — listagem paginada:
-  - Busca com debounce por placa, modelo, nome do cliente
-  - Paginação com cursor (20/página) + botão "Carregar mais"
-  - Cada item: placa formatada, modelo, cliente, última quilometragem, barra de progresso de checklists
+- [x] Página `/vehicles` — listagem inicial:
+  - Busca por placa, modelo e nome do cliente
   - Botão "Novo veículo"
-  - Ações: editar, excluir (com confirmação)
-- [ ] Drawer "Criar veículo":
-  - Campos: placa (obrigatório, com formatação), modelo, ano, cor
-  - Select "Cliente" com busca (`GET /api/customers?q=`)
-- [ ] Drawer "Editar veículo"
-- [ ] Página `/vehicles/{id}` — detalhes:
+  - Ações por card: editar, excluir (com confirmação) e ver detalhes
+  - Botão "Carregar mais" no frontend para ampliar a lista visível
+- [x] Drawer "Criar veículo":
+  - Campos: cliente, placa, modelo, ano, cor
+- [x] Drawer "Editar veículo"
+- [x] Página `/vehicles/{id}` — detalhes:
   - Dados do veículo + cliente
   - **Histórico de quilometragem**:
-    - Tabela: data, quilometragem, tipo (manual/checklist), notas
-    - Botão "Registrar quilometragem" (somente `source_type = 'manual'`)
+    - Lista de registros com data, quilometragem, tipo e notas
+    - Botão "Registrar quilometragem" para `source_type = 'manual'`
     - Editar e excluir registros manuais
-  - Lista dos últimos checklists executados (link para `/checklists/{id}`)
-- [ ] Composable `useVehicles()` — `list`, `paginated`, `byCustomer`, `create()`, `update()`, `remove()`
-- [ ] Composable `useMileageHistory(vehicleId)` — `list`, `create()`, `update()`, `remove()`
+- [x] Composable `useVehicles()` — `list`, `create()`, `update()`, `remove()`
+- [x] Composable `useMileageHistory(vehicleId)` — `list`, `create()`, `update()`, `remove()`
+- [ ] Migrar a listagem de veículos para paginação cursor real quando o endpoint do backend incluir veículos sem checklist
+- [ ] Adicionar select de cliente com busca remota, se a base crescer a ponto de tornar o select local insuficiente
+- [x] Exibir últimos checklists do veículo no detalhe
 
 ### Campos exibidos
 
@@ -234,6 +234,8 @@ interface User {
 | `latest_mileage`                     | Última km registrada                  |
 | `checklists_done / checklists_total` | Progresso de checklists               |
 
+> Situação atual da fase 6: em andamento. O módulo de veículos já existe com listagem, criação, edição, exclusão, detalhe, histórico manual de quilometragem e últimos checklists no detalhe. Ainda faltam fechar a paginação cursor real e, se necessário, o select remoto de clientes para concluir a fase conforme o roadmap original.
+
 ---
 
 ## Fase 7 — Templates de Checklist
@@ -243,29 +245,33 @@ interface User {
 
 ### Templates
 
-- [ ] Página `/checklists/templates` — listagem:
+- [x] Página `/checklists` — listagem inicial de templates:
   - Cards com nome e tipo de veículo (ou "Todos os tipos")
   - Busca por nome
   - Botão "Novo template"
   - Ações: editar, excluir (com confirmação), ver itens
-- [ ] Drawer "Criar template":
+- [x] Drawer "Criar template":
   - Campos: nome (obrigatório), tipo de veículo (select opcional)
-- [ ] Drawer "Editar template"
+- [x] Drawer "Editar template"
+- [x] Integração no menu lateral como módulo `Templates`
 
 ### Itens do template
 
-- [ ] Página `/checklists/templates/{id}` — detalhe + itens:
+- [x] Página `/checklists/{templateId}` — detalhe + itens:
   - Lista de itens ordenada por `order_index`
-  - Drag-and-drop para reordenar (atualiza `order_index` via `PUT /api/checklist-items/{id}`)
-  - Cada item exibe: nome, descrição, badges de flags (obrigatório, completável, múltipla resposta), opções de resposta
-  - Botão "Novo item"
   - Ações por item: editar, excluir (com confirmação)
-- [ ] Drawer "Criar item":
-  - Campos: nome (obrigatório), descrição, is_completable, is_required, allows_multiple_responses
-  - Seção de opções de resposta: adicionar opções com label e ordenação
-- [ ] Drawer "Editar item"
-- [ ] Composable `useChecklistTemplates()` — `list`, `create()`, `update()`, `remove()`
-- [ ] Composable `useChecklistItems(templateId)` — `list`, `create()`, `update()`, `remove()`, `reorder()`
+  - Opções de resposta renderizadas no card do item
+  - Exclusão do template a partir do detalhe
+- [x] Drawer "Criar item":
+  - Campos: nome (obrigatório), descrição, ordem, is_completable, is_required, allows_multiple_responses
+  - Seção de opções de resposta
+- [x] Drawer "Editar item"
+- [ ] Reordenação drag-and-drop dos itens
+- [x] Composable `useChecklistTemplates()` — `list`, `create()`, `update()`, `remove()`
+- [x] Composable `useChecklistItems(templateId)` — `list`, `create()`, `update()`, `remove()`
+- [ ] Reorder / `reorder()` para alinhar ao roadmap final
+
+> Situação atual da fase 7: em andamento. O client já possui listagem de templates, CRUD de template, detalhe do template, CRUD de itens e vínculo no menu lateral. Ainda faltam a reordenação dos itens e o fechamento fino do contrato de navegação para alinhar 100% ao roadmap final.
 
 ### Campos de item
 

@@ -8,8 +8,8 @@ const userEmail = computed(() => auth.user.value?.email ?? '');
 
 const navigation = [
   { label: 'Dashboard', to: { name: 'index' }, icon: 'i-lucide-layout-dashboard' },
-  { label: 'Checklists', to: { name: 'checklists' }, icon: 'i-lucide-clipboard-check' },
   { label: 'Empresas', to: { name: 'companies' }, icon: 'i-lucide-building-2' },
+  { label: 'Templates', to: { name: 'checklists' }, icon: 'i-lucide-clipboard-check' },
   { label: 'Clientes', to: { name: 'customers' }, icon: 'i-lucide-users' },
   { label: 'Veículos', to: { name: 'vehicles' }, icon: 'i-lucide-car-front' },
   { label: 'Funcionários', to: { name: 'employees' }, icon: 'i-lucide-user-round-cog' },
