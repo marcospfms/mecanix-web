@@ -5,24 +5,24 @@ const props = defineProps<{
     statusMessage?: string;
     message?: string;
   };
-}>();
+}>()
 
 const title = computed(() => {
-  if (props.error?.statusCode === 404) return 'Página não encontrada';
-  if (props.error?.statusCode === 401) return 'Acesso não autorizado';
-  return 'Algo saiu do esperado';
-});
+  if (props.error?.statusCode === 404) return 'Página não encontrada'
+  if (props.error?.statusCode === 401) return 'Acesso não autorizado'
+  return 'Algo saiu do esperado'
+})
 
 const description = computed(
   () =>
-    props.error?.statusMessage ||
-    props.error?.message ||
-    'Tente voltar para o início e repetir a ação.'
-);
+    props.error?.statusMessage
+    || props.error?.message
+    || 'Tente voltar para o início e repetir a ação.'
+)
 
 const handleClear = async () => {
-  await clearError({ redirect: '/' });
-};
+  await clearError({ redirect: '/' })
+}
 </script>
 
 <template>
@@ -32,15 +32,28 @@ const handleClear = async () => {
         <UCard class="rounded-3xl">
           <div class="space-y-6 p-2">
             <div class="space-y-3 text-center">
-              <div class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <UIcon name="i-lucide-triangle-alert" class="size-7" />
+              <div
+                class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+              >
+                <UIcon
+                  name="i-lucide-triangle-alert"
+                  class="size-7"
+                />
               </div>
               <div class="space-y-1">
-                <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.32em] text-primary"
+                >
                   Erro {{ error?.statusCode ?? 500 }}
                 </p>
-                <h1 class="text-2xl font-semibold tracking-tight text-highlighted">{{ title }}</h1>
-                <p class="text-sm leading-6 text-toned">{{ description }}</p>
+                <h1
+                  class="text-2xl font-semibold tracking-tight text-highlighted"
+                >
+                  {{ title }}
+                </h1>
+                <p class="text-sm leading-6 text-toned">
+                  {{ description }}
+                </p>
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const open = defineModel<boolean>('open', { default: false });
+const open = defineModel<boolean>('open', { default: false })
 
 withDefaults(
   defineProps<{
@@ -18,21 +18,21 @@ withDefaults(
     loading: false,
     color: 'error'
   }
-);
+)
 
 const emit = defineEmits<{
   confirm: [];
   cancel: [];
-}>();
+}>()
 
 const handleCancel = () => {
-  open.value = false;
-  emit('cancel');
-};
+  open.value = false
+  emit('cancel')
+}
 
 const handleConfirm = () => {
-  emit('confirm');
-};
+  emit('confirm')
+}
 </script>
 
 <template>
@@ -45,8 +45,12 @@ const handleConfirm = () => {
     <template #content>
       <div class="space-y-6 p-6">
         <div class="space-y-2">
-          <p class="text-lg font-semibold text-highlighted">{{ title }}</p>
-          <p class="text-sm leading-6 text-toned">{{ description }}</p>
+          <p class="text-lg font-semibold text-highlighted">
+            {{ title }}
+          </p>
+          <p class="text-sm leading-6 text-toned">
+            {{ description }}
+          </p>
         </div>
 
         <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

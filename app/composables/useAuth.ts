@@ -6,114 +6,117 @@ type AuthUser = {
   is_employee: boolean;
   created_at: string;
   updated_at: string;
-};
+}
 
 type GoogleAuthResponse = {
   token: string;
   user: AuthUser;
   action: 'login' | 'linked' | 'registered';
-};
+}
 
 type ApiEnvelope<T> = {
   success: boolean;
   data: T;
   message?: string;
-};
+}
 
 type GoogleLoginPayload = {
   id_token: string;
-};
+}
 
-export const AUTH_COOKIE_KEY = 'mecanix_client_token';
+export const AUTH_COOKIE_KEY = 'mecanix_client_token'
 
 export function useAuth() {
   const token = useCookie<string | null>(AUTH_COOKIE_KEY, {
     sameSite: 'lax',
     secure: false,
     default: () => null
-  });
+  })
 
-  const user = useState<AuthUser | null>('auth-user', () => null);
-  const loading = useState<boolean>('auth-loading', () => false);
-  const hydrated = useState<boolean>('auth-hydrated', () => false);
-  const { $api } = useNuxtApp();
+  const user = useState<AuthUser | null>('auth-user', () => null)
+  const loading = useState<boolean>('auth-loading', () => false)
+  const hydrated = useState<boolean>('auth-hydrated', () => false)
+  const { $api } = useNuxtApp()
 
-  const isAuthenticated = computed(() => Boolean(token.value && user.value));
+  const isAuthenticated = computed(() => Boolean(token.value && user.value))
 
   const refresh = async () => {
     if (!token.value) {
-      user.value = null;
-      hydrated.value = true;
-      return null;
+      user.value = null
+      hydrated.value = true
+      return null
     }
 
-    loading.value = true;
+    loading.value = true
 
     try {
-      const response = await $api<ApiEnvelope<AuthUser>>('/me');
-      user.value = response.data;
+      const response = await $api<ApiEnvelope<AuthUser>>('/me')
+      user.value = response.data
 
       if (response.data.is_employee) {
-        token.value = null;
-        user.value = null;
+        token.value = null
+        user.value = null
         throw createError({
           statusCode: 403,
           statusMessage: 'Funcionários não acessam o client web.'
-        });
+        })
       }
 
-      return response.data;
+      return response.data
     } catch (error) {
-      token.value = null;
-      user.value = null;
-      throw error;
+      token.value = null
+      user.value = null
+      throw error
     } finally {
-      loading.value = false;
-      hydrated.value = true;
+      loading.value = false
+      hydrated.value = true
     }
-  };
+  }
 
   const loginWithGoogle = async (payload: GoogleLoginPayload) => {
-    loading.value = true;
+    loading.value = true
 
     try {
-      const response = await $api<ApiEnvelope<GoogleAuthResponse>>('/auth/google', {
-        method: 'POST',
-        body: payload
-      });
+      const response = await $api<ApiEnvelope<GoogleAuthResponse>>(
+        '/auth/google',
+        {
+          method: 'POST',
+          body: payload
+        }
+      )
 
-      token.value = response.data.token;
-      user.value = response.data.user;
+      token.value = response.data.token
+      user.value = response.data.user
 
       if (response.data.user.is_employee) {
-        token.value = null;
-        user.value = null;
+        token.value = null
+        user.value = null
         throw createError({
           statusCode: 403,
           statusMessage: 'Funcionários não acessam o client web.'
-        });
+        })
       }
 
-      hydrated.value = true;
+      hydrated.value = true
 
-      return response.data;
+      return response.data
     } finally {
-      loading.value = false;
+      loading.value = false
     }
-  };
+  }
 
   const logout = async () => {
     try {
       if (token.value) {
-        await $api('/logout', { method: 'POST' });
+        await $api('/logout', { method: 'POST' })
       }
     } finally {
-      token.value = null;
-      user.value = null;
-      hydrated.value = true;
-      await navigateTo({ name: 'login' });
+      token.value = null
+      user.value = null
+      hydrated.value = true
+      await navigateTo({ name: 'login' })
     }
-  };
+  }
 
   return {
     token,
@@ -124,5 +127,5 @@ export function useAuth() {
     loginWithGoogle,
     refresh,
     logout
-  };
+  }
 }

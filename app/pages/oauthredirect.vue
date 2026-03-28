@@ -1,11 +1,11 @@
 <script setup lang="ts">
 definePageMeta({
   layout: 'auth'
-});
+})
 
 onMounted(async () => {
-  await navigateTo({ name: 'login', replace: true });
-});
+  await navigateTo({ name: 'login', replace: true })
+})
 </script>
 
 <template>

@@ -1,26 +1,45 @@
 <script setup lang="ts">
-const auth = useAuth();
-const mobileMenuOpen = ref(false);
-const runtimeConfig = useRuntimeConfig();
-const brandIconSrc = `${runtimeConfig.app.baseURL}branding/icon-transparent-sm.png`;
-const userName = computed(() => auth.user.value?.name ?? '');
-const userEmail = computed(() => auth.user.value?.email ?? '');
+const auth = useAuth()
+const mobileMenuOpen = ref(false)
+const runtimeConfig = useRuntimeConfig()
+const brandIconSrc = `${runtimeConfig.app.baseURL}branding/icon-transparent-sm.png`
+const userName = computed(() => auth.user.value?.name ?? '')
+const userEmail = computed(() => auth.user.value?.email ?? '')
 
 const navigation = [
-  { label: 'Dashboard', to: { name: 'index' }, icon: 'i-lucide-layout-dashboard' },
+  {
+    label: 'Dashboard',
+    to: { name: 'index' },
+    icon: 'i-lucide-layout-dashboard'
+  },
+  {
+    label: 'Checklists',
+    to: { name: 'checklists' },
+    icon: 'i-lucide-clipboard-check'
+  },
+  {
+    label: 'Templates',
+    to: { name: 'checklists-templates' },
+    icon: 'i-lucide-layout-list'
+  },
   { label: 'Empresas', to: { name: 'companies' }, icon: 'i-lucide-building-2' },
-  { label: 'Templates', to: { name: 'checklists' }, icon: 'i-lucide-clipboard-check' },
   { label: 'Clientes', to: { name: 'customers' }, icon: 'i-lucide-users' },
   { label: 'Veículos', to: { name: 'vehicles' }, icon: 'i-lucide-car-front' },
-  { label: 'Funcionários', to: { name: 'employees' }, icon: 'i-lucide-user-round-cog' },
+  {
+    label: 'Funcionários',
+    to: { name: 'employees' },
+    icon: 'i-lucide-user-round-cog'
+  },
   { label: 'Perfil', to: { name: 'profile' }, icon: 'i-lucide-user-circle-2' }
-];
+]
 </script>
 
 <template>
   <div class="min-h-screen bg-default">
     <div class="flex min-h-screen">
-      <aside class="hidden w-72 shrink-0 border-r border-default bg-muted/30 lg:flex lg:flex-col">
+      <aside
+        class="hidden w-72 shrink-0 border-r border-default bg-muted/30 lg:flex lg:flex-col"
+      >
         <div class="border-b border-default px-6 py-5">
           <div class="flex items-center gap-3">
             <NuxtImg
@@ -29,13 +48,18 @@ const navigation = [
               class="h-9 w-9 rounded-xl object-contain"
               loading="eager"
             />
-            <span class="text-lg font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
+            <span
+              class="text-lg font-semibold tracking-[-0.02em] text-highlighted"
+            >Mecanix</span>
           </div>
         </div>
 
         <nav class="flex-1 px-4 py-5">
           <ul class="space-y-2">
-            <li v-for="item in navigation" :key="item.to">
+            <li
+              v-for="item in navigation"
+              :key="item.to"
+            >
               <UButton
                 :to="item.to"
                 variant="ghost"
@@ -53,8 +77,12 @@ const navigation = [
           <div class="rounded-2xl border border-default bg-default p-4">
             <ClientOnly>
               <div>
-                <p class="text-sm font-medium text-highlighted">{{ userName }}</p>
-                <p class="mt-1 text-xs text-toned">{{ userEmail }}</p>
+                <p class="text-sm font-medium text-highlighted">
+                  {{ userName }}
+                </p>
+                <p class="mt-1 text-xs text-toned">
+                  {{ userEmail }}
+                </p>
               </div>
 
               <template #fallback>
@@ -89,7 +117,9 @@ const navigation = [
                 class="h-8 w-8 rounded-lg object-contain"
                 loading="eager"
               />
-              <span class="text-base font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
+              <span
+                class="text-base font-semibold tracking-[-0.02em] text-highlighted"
+              >Mecanix</span>
             </div>
             <div class="flex items-center gap-2">
               <UButton
@@ -125,7 +155,9 @@ const navigation = [
     >
       <template #content="{ close }">
         <div class="flex h-full flex-col bg-default">
-          <div class="flex items-center justify-between border-b border-default px-4 py-4">
+          <div
+            class="flex items-center justify-between border-b border-default px-4 py-4"
+          >
             <div class="flex items-center gap-3">
               <NuxtImg
                 :src="brandIconSrc"
@@ -133,7 +165,9 @@ const navigation = [
                 class="h-8 w-8 rounded-lg object-contain"
                 loading="eager"
               />
-              <span class="text-base font-semibold tracking-[-0.02em] text-highlighted">Mecanix</span>
+              <span
+                class="text-base font-semibold tracking-[-0.02em] text-highlighted"
+              >Mecanix</span>
             </div>
 
             <UButton
@@ -146,7 +180,10 @@ const navigation = [
 
           <nav class="flex-1 px-3 py-4">
             <ul class="space-y-2">
-              <li v-for="item in navigation" :key="item.to">
+              <li
+                v-for="item in navigation"
+                :key="item.to"
+              >
                 <UButton
                   :to="item.to"
                   variant="ghost"
@@ -165,8 +202,12 @@ const navigation = [
             <div class="rounded-2xl border border-default bg-default p-4">
               <ClientOnly>
                 <div>
-                  <p class="text-sm font-medium text-highlighted">{{ userName }}</p>
-                  <p class="mt-1 text-xs text-toned">{{ userEmail }}</p>
+                  <p class="text-sm font-medium text-highlighted">
+                    {{ userName }}
+                  </p>
+                  <p class="mt-1 text-xs text-toned">
+                    {{ userEmail }}
+                  </p>
                 </div>
 
                 <template #fallback>

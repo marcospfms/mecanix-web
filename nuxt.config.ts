@@ -1,26 +1,15 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  app: {
-    baseURL: '/'
-  },
-
-  experimental: {
-    typedPages: true
-  },
-
-  modules: [
-    '@nuxt/eslint',
-    '@nuxt/image',
-    '@nuxt/ui'
-  ],
+  modules: ['@nuxt/eslint', '@nuxt/image', '@nuxt/ui'],
 
   devtools: {
     enabled: true
   },
+  app: {
+    baseURL: '/'
+  },
 
   css: ['~/assets/css/main.css'],
-
-  compatibilityDate: '2025-01-15',
 
   runtimeConfig: {
     public: {
@@ -29,6 +18,12 @@ export default defineNuxtConfig({
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID_WEB || ''
     }
   },
+
+  experimental: {
+    typedPages: true
+  },
+
+  compatibilityDate: '2025-01-15',
 
   eslint: {
     config: {
