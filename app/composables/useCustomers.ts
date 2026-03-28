@@ -75,17 +75,33 @@ export function formatBrPhone(value?: string | null) {
 export function useCustomers() {
   const auth = useAuth()
   const search = ref('')
+  const customersState = ref<Customer[]>([])
+  const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const error = ref<unknown>(null)
 
-  const customersState = useAPI<Customer[], ApiEnvelope<Customer[]>>(
-    '/customers',
-    {
-      key: 'customers:list',
-      immediate: false,
-      server: false,
-      default: (): Customer[] => [],
-      transform: response => response.data
+  const refresh = async () => {
+    if (!auth.token.value) {
+      customersState.value = []
+      status.value = 'idle'
+      error.value = null
+      return customersState.value
     }
-  )
+
+    status.value = 'pending'
+    error.value = null
+
+    try {
+      const response = await useApiFetch<ApiEnvelope<Customer[]>>('/customers')
+      customersState.value = response.data
+      status.value = 'success'
+      return customersState.value
+    } catch (err) {
+      customersState.value = []
+      status.value = 'error'
+      error.value = err
+      throw err
+    }
+  }
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
@@ -93,24 +109,30 @@ export function useCustomers() {
       if (!hydrated) return
 
       if (!token) {
-        customersState.data.value = []
-        customersState.clear()
+        customersState.value = []
+        status.value = 'idle'
+        error.value = null
         return
       }
 
-      await customersState.refresh()
+      await refresh()
     },
     { immediate: true }
   )
+
+  const customersResolved = computed<Customer[]>(() => {
+    const source = customersState.value
+    return Array.isArray(source) ? source : []
+  })
 
   const filteredCustomers = computed(() => {
     const term = search.value.trim().toLowerCase()
 
     if (!term) {
-      return customersState.data.value ?? []
+      return customersResolved.value
     }
 
-    return (customersState.data.value ?? []).filter((customer) => {
+    return customersResolved.value.filter((customer) => {
       const taxDigits = onlyDigits(customer.tax_id)
       const phoneDigits = onlyDigits(customer.phone ?? '')
 
@@ -124,6 +146,12 @@ export function useCustomers() {
     })
   })
 
+  const setCustomers = (nextCustomers: Customer[]) => {
+    customersState.value = nextCustomers
+    status.value = 'success'
+    error.value = null
+  }
+
   const createCustomer = async (payload: CustomerFormPayload) => {
     const response = await useApiFetch<ApiEnvelope<Customer>>('/customers', {
       method: 'POST',
@@ -135,7 +163,7 @@ export function useCustomers() {
       }
     })
 
-    await customersState.refresh()
+    setCustomers([response.data, ...customersResolved.value])
     return response.data
   }
 
@@ -153,22 +181,26 @@ export function useCustomers() {
       }
     )
 
-    await customersState.refresh()
+    setCustomers(
+      customersResolved.value.map(customer =>
+        customer.id === id ? response.data : customer
+      )
+    )
     return response.data
   }
 
   const deleteCustomer = async (id: number) => {
     await useApiFetch(`/customers/${id}`, { method: 'DELETE' })
-    await customersState.refresh()
+    setCustomers(customersResolved.value.filter(customer => customer.id !== id))
   }
 
   return {
     search,
     customers: filteredCustomers,
-    rawCustomers: customersState.data,
-    status: customersState.status,
-    error: customersState.error,
-    refresh: customersState.refresh,
+    rawCustomers: customersResolved,
+    status,
+    error,
+    refresh,
     createCustomer,
     updateCustomer,
     deleteCustomer

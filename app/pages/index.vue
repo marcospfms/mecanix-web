@@ -17,6 +17,25 @@ const {
   refresh
 } = useDashboard(selectedEmployeeUserId)
 
+const emptyStats = (): NonNullable<typeof stats.value> => ({
+  total_companies: 0,
+  total_customers: 0,
+  total_vehicles: 0,
+  checklists_total: 0,
+  checklists_completed: 0,
+  checklists_draft: 0,
+  checklists_templates: 0,
+  checklists_month_total: 0,
+  checklists_vehicles_inspected_this_month: 0,
+  checklists_completion_rate: 0,
+  recent_executions: [],
+  checklists_by_employee: [],
+  subscription_plan: null,
+  subscription_status: null
+})
+
+const statsResolved = computed(() => stats.value ?? emptyStats())
+
 const isAuthReady = computed(() => auth.hydrated.value)
 const isLoading = computed(() => status.value === 'pending' && !stats.value)
 const isRefreshing = computed(
@@ -31,7 +50,7 @@ const firstName = computed(
 const employeeFilterItems = computed<SelectItem[]>(() => {
   const items: SelectItem[] = [{ label: 'Toda a equipe', value: 'all' }]
 
-  for (const employee of stats.value?.checklists_by_employee ?? []) {
+  for (const employee of statsResolved.value.checklists_by_employee ?? []) {
     items.push({
       label:
         employee.name
@@ -56,59 +75,72 @@ const monthlyCards = computed(() => [
   {
     key: 'checklists',
     label: 'Checklists no mês',
-    value: stats.value?.checklists_month_total ?? 0,
+    value: statsResolved.value.checklists_month_total,
     icon: 'i-lucide-clipboard-check'
   },
   {
     key: 'vehicles',
     label: 'Veículos vistoriados',
-    value: stats.value?.checklists_vehicles_inspected_this_month ?? 0,
+    value: statsResolved.value.checklists_vehicles_inspected_this_month,
     icon: 'i-lucide-car-front'
   }
 ])
 
 const summaryCards = computed(() =>
   [
-    stats.value?.total_companies !== undefined
+    statsResolved.value.total_companies !== undefined
       ? {
           key: 'companies',
           label: 'Empresas',
-          value: stats.value.total_companies,
+          value: statsResolved.value.total_companies,
           icon: 'i-lucide-building-2'
         }
       : null,
-    stats.value?.total_customers !== undefined
+    statsResolved.value.total_customers !== undefined
       ? {
           key: 'customers',
           label: 'Clientes',
-          value: stats.value.total_customers,
+          value: statsResolved.value.total_customers,
           icon: 'i-lucide-users'
         }
       : null,
-    stats.value?.total_vehicles !== undefined
+    statsResolved.value.total_vehicles !== undefined
       ? {
           key: 'vehicles',
           label: 'Veículos',
-          value: stats.value.total_vehicles,
+          value: statsResolved.value.total_vehicles,
           icon: 'i-lucide-car-front'
         }
       : null,
-    stats.value?.checklists_templates !== undefined
+    statsResolved.value.checklists_templates !== undefined
       ? {
           key: 'templates',
           label: 'Templates',
-          value: stats.value.checklists_templates,
+          value: statsResolved.value.checklists_templates,
           icon: 'i-lucide-layers-3'
         }
       : null
   ].filter((item): item is NonNullable<typeof item> => item !== null)
 )
 
-const recentExecutions = computed(() => stats.value?.recent_executions ?? [])
-const employeeStats = computed(() => stats.value?.checklists_by_employee ?? [])
+const recentExecutions = computed(() => statsResolved.value.recent_executions ?? [])
+const employeeStats = computed(() => statsResolved.value.checklists_by_employee ?? [])
+const isEmptyDashboard = computed(() => {
+  return (
+    (statsResolved.value.total_companies ?? 0) === 0 &&
+    (statsResolved.value.total_customers ?? 0) === 0 &&
+    (statsResolved.value.total_vehicles ?? 0) === 0 &&
+    (statsResolved.value.checklists_templates ?? 0) === 0 &&
+    statsResolved.value.checklists_total === 0 &&
+    statsResolved.value.checklists_month_total === 0 &&
+    statsResolved.value.checklists_vehicles_inspected_this_month === 0 &&
+    recentExecutions.value.length === 0 &&
+    employeeStats.value.length === 0
+  )
+})
 
 const progressValue = computed(() =>
-  Math.min(Math.max(stats.value?.checklists_completion_rate ?? 0, 0), 100)
+  Math.min(Math.max(statsResolved.value.checklists_completion_rate, 0), 100)
 )
 
 const formatDateTime = (value?: string) => {
@@ -189,22 +221,22 @@ const handleRefresh = async () => {
           description="Buscando o panorama mais recente da operação."
         />
 
-        <UAlert
-          v-else-if="error"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          title="Falha ao carregar o dashboard"
-          description="Atualize a página ou tente novamente em instantes."
-        />
-
         <AppLoading
           v-else-if="isDataRefreshing"
           title="Atualizando dashboard"
           description="Buscando os dados mais recentes da operação."
         />
 
-        <template v-else-if="stats">
+        <template v-else>
+          <UAlert
+            v-if="isEmptyDashboard"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-info"
+            title="Dashboard ainda sem dados"
+            description="Os indicadores estão zerados porque ainda não existem cadastros ou execuções suficientes para compor o painel."
+          />
+
           <UCard class="rounded-[1.75rem] border-default bg-default">
             <div class="space-y-5">
               <div
@@ -286,8 +318,8 @@ const handleRefresh = async () => {
                       Concluídos no período
                     </p>
                     <p class="text-sm text-toned">
-                      {{ stats.checklists_completed }}/{{
-                        stats.checklists_total
+                      {{ statsResolved.checklists_completed }}/{{
+                        statsResolved.checklists_total
                       }}
                       checklists finalizados
                     </p>
@@ -308,7 +340,7 @@ const handleRefresh = async () => {
                 </div>
 
                 <p class="mt-3 text-sm text-toned">
-                  {{ stats.checklists_draft }} checklist(s) ainda em andamento.
+                  {{ statsResolved.checklists_draft }} checklist(s) ainda em andamento.
                 </p>
               </div>
             </div>
@@ -320,10 +352,10 @@ const handleRefresh = async () => {
                 Base operacional
               </h2>
               <p
-                v-if="stats.subscription_plan"
+                v-if="statsResolved.subscription_plan"
                 class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
               >
-                {{ stats.subscription_plan }}
+                {{ statsResolved.subscription_plan }}
               </p>
             </div>
 

@@ -21,6 +21,10 @@ export function useAPI<TData, TRaw = TData>(
 ): AsyncData<TData, NuxtError<unknown> | undefined> {
   const { $api } = useNuxtApp()
   const resolvedUrl = typeof url === 'function' ? computed(url) : ref(url)
+  const resolvedKey =
+    typeof options?.key === 'function'
+      ? computed(options.key)
+      : options?.key
   const { key, watch, ...restOptions } = options ?? {}
   const asyncOptions: {
     immediate?: boolean;
@@ -40,14 +44,24 @@ export function useAPI<TData, TRaw = TData>(
 
   const handler = async () => {
     const response = await $api<TRaw>(resolvedUrl.value)
-    return options?.transform
+    const result = options?.transform
       ? await options.transform(response)
       : (response as TData)
+
+    if (result !== undefined) {
+      return result
+    }
+
+    if (options?.default) {
+      return options.default()
+    }
+
+    return null as TData
   }
 
-  if (key) {
+  if (resolvedKey) {
     return useAsyncData<TData>(
-      key,
+      resolvedKey,
       handler,
       asyncOptions
     ) as AsyncData<TData, NuxtError<unknown> | undefined>

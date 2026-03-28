@@ -128,11 +128,13 @@ export function useDashboard(
 
       if (!token) {
         dashboard.data.value = null
+        dashboard.error.value = undefined
         dashboard.clear()
         return
       }
 
       await dashboard.refresh()
+      dashboard.error.value = undefined
     },
     { immediate: true }
   )

@@ -66,17 +66,33 @@ type ChecklistItemPayload = {
 
 export function useVehicleTypes() {
   const auth = useAuth()
+  const vehicleTypesState = ref<VehicleType[]>([])
+  const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const error = ref<unknown>(null)
 
-  const vehicleTypesState = useAPI<VehicleType[], ApiEnvelope<VehicleType[]>>(
-    '/vehicle-types',
-    {
-      key: 'vehicle-types:list',
-      immediate: false,
-      server: false,
-      default: (): VehicleType[] => [],
-      transform: (response: ApiEnvelope<VehicleType[]>) => response.data
+  const refresh = async () => {
+    if (!auth.token.value) {
+      vehicleTypesState.value = []
+      status.value = 'idle'
+      error.value = null
+      return vehicleTypesState.value
     }
-  )
+
+    status.value = 'pending'
+    error.value = null
+
+    try {
+      const response = await useApiFetch<ApiEnvelope<VehicleType[]>>('/vehicle-types')
+      vehicleTypesState.value = response.data
+      status.value = 'success'
+      return vehicleTypesState.value
+    } catch (err) {
+      vehicleTypesState.value = []
+      status.value = 'error'
+      error.value = err
+      throw err
+    }
+  }
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
@@ -84,43 +100,60 @@ export function useVehicleTypes() {
       if (!hydrated) return
 
       if (!token) {
-        vehicleTypesState.data.value = []
-        vehicleTypesState.clear()
+        vehicleTypesState.value = []
+        status.value = 'idle'
+        error.value = null
         return
       }
 
-      await vehicleTypesState.refresh()
+      await refresh()
     },
     { immediate: true }
   )
 
   const types = computed(() => {
-    const source = vehicleTypesState.data.value
+    const source = vehicleTypesState.value
     return Array.isArray(source) ? source : []
   })
 
   return {
     types,
-    status: vehicleTypesState.status,
-    error: vehicleTypesState.error,
-    refresh: vehicleTypesState.refresh
+    status,
+    error,
+    refresh
   }
 }
 
 export function useChecklistTemplates() {
   const auth = useAuth()
   const search = ref('')
+  const templatesState = ref<ChecklistTemplate[]>([])
+  const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const error = ref<unknown>(null)
 
-  const templatesState = useAPI<
-    ChecklistTemplate[],
-    ApiEnvelope<ChecklistTemplate[]>
-  >('/checklist-templates', {
-    key: 'checklist-templates:list',
-    immediate: false,
-    server: false,
-    default: (): ChecklistTemplate[] => [],
-    transform: (response: ApiEnvelope<ChecklistTemplate[]>) => response.data
-  })
+  const refresh = async () => {
+    if (!auth.token.value) {
+      templatesState.value = []
+      status.value = 'idle'
+      error.value = null
+      return templatesState.value
+    }
+
+    status.value = 'pending'
+    error.value = null
+
+    try {
+      const response = await useApiFetch<ApiEnvelope<ChecklistTemplate[]>>('/checklist-templates')
+      templatesState.value = response.data
+      status.value = 'success'
+      return templatesState.value
+    } catch (err) {
+      templatesState.value = []
+      status.value = 'error'
+      error.value = err
+      throw err
+    }
+  }
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
@@ -128,22 +161,25 @@ export function useChecklistTemplates() {
       if (!hydrated) return
 
       if (!token) {
-        templatesState.data.value = []
-        templatesState.clear()
+        templatesState.value = []
+        status.value = 'idle'
+        error.value = null
         return
       }
 
-      await templatesState.refresh()
+      await refresh()
     },
     { immediate: true }
   )
 
+  const templatesResolved = computed<ChecklistTemplate[]>(() => {
+    const source = templatesState.value
+    return Array.isArray(source) ? source : []
+  })
+
   const templates = computed(() => {
-    const source = Array.isArray(templatesState.data.value)
-      ? templatesState.data.value
-      : []
     const term = search.value.trim().toLowerCase()
-    const list = [...source].sort((a, b) =>
+    const list = [...templatesResolved.value].sort((a, b) =>
       a.name.localeCompare(b.name, 'pt-BR')
     )
 
@@ -157,11 +193,17 @@ export function useChecklistTemplates() {
   const { createTemplate, updateTemplate, deleteTemplate }
     = useChecklistTemplateActions()
 
+  const setTemplates = (nextTemplates: ChecklistTemplate[]) => {
+    templatesState.value = nextTemplates
+    status.value = 'success'
+    error.value = null
+  }
+
   const createAndRefreshTemplate = async (
     payload: ChecklistTemplatePayload
   ) => {
     const template = await createTemplate(payload)
-    await templatesState.refresh()
+    setTemplates([template, ...templatesResolved.value])
     return template
   }
 
@@ -170,22 +212,26 @@ export function useChecklistTemplates() {
     payload: ChecklistTemplatePayload
   ) => {
     const template = await updateTemplate(id, payload)
-    await templatesState.refresh()
+    setTemplates(
+      templatesResolved.value.map(currentTemplate =>
+        currentTemplate.id === id ? template : currentTemplate
+      )
+    )
     return template
   }
 
   const deleteAndRefreshTemplate = async (id: number) => {
     await deleteTemplate(id)
-    await templatesState.refresh()
+    setTemplates(templatesResolved.value.filter(template => template.id !== id))
   }
 
   return {
     search,
     templates,
-    rawTemplates: templatesState.data,
-    status: templatesState.status,
-    error: templatesState.error,
-    refresh: templatesState.refresh,
+    rawTemplates: templatesResolved,
+    status,
+    error,
+    refresh,
     createTemplate: createAndRefreshTemplate,
     updateTemplate: updateAndRefreshTemplate,
     deleteTemplate: deleteAndRefreshTemplate

@@ -1,5 +1,5 @@
 import { useAuth } from './useAuth'
-import { useAPI, useApiFetch } from './useAPI'
+import { useApiFetch } from './useAPI'
 
 export type Company = {
   id: number;
@@ -39,17 +39,33 @@ export function formatCnpj(value: string) {
 export function useCompanies() {
   const auth = useAuth()
   const search = ref('')
+  const companiesState = ref<Company[]>([])
+  const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const error = ref<unknown>(null)
 
-  const companiesState = useAPI<Company[], ApiEnvelope<Company[]>>(
-    '/companies',
-    {
-      key: 'companies:list',
-      immediate: false,
-      server: false,
-      default: (): Company[] => [],
-      transform: response => response.data
+  const refresh = async () => {
+    if (!auth.token.value) {
+      companiesState.value = []
+      status.value = 'idle'
+      error.value = null
+      return companiesState.value
     }
-  )
+
+    status.value = 'pending'
+    error.value = null
+
+    try {
+      const response = await useApiFetch<ApiEnvelope<Company[]>>('/companies')
+      companiesState.value = response.data
+      status.value = 'success'
+      return companiesState.value
+    } catch (err) {
+      companiesState.value = []
+      status.value = 'error'
+      error.value = err
+      throw err
+    }
+  }
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
@@ -57,24 +73,30 @@ export function useCompanies() {
       if (!hydrated) return
 
       if (!token) {
-        companiesState.data.value = []
-        companiesState.clear()
+        companiesState.value = []
+        status.value = 'idle'
+        error.value = null
         return
       }
 
-      await companiesState.refresh()
+      await refresh()
     },
     { immediate: true }
   )
+
+  const companiesResolved = computed<Company[]>(() => {
+    const source = companiesState.value
+    return Array.isArray(source) ? source : []
+  })
 
   const filteredCompanies = computed(() => {
     const term = search.value.trim().toLowerCase()
 
     if (!term) {
-      return companiesState.data.value ?? []
+      return companiesResolved.value
     }
 
-    return (companiesState.data.value ?? []).filter((company) => {
+    return companiesResolved.value.filter((company) => {
       const cnpjDigits = normalizeCnpj(company.cnpj)
 
       return (
@@ -84,6 +106,12 @@ export function useCompanies() {
       )
     })
   })
+
+  const setCompanies = (nextCompanies: Company[]) => {
+    companiesState.value = nextCompanies
+    status.value = 'success'
+    error.value = null
+  }
 
   const createCompany = async (payload: CompanyFormPayload) => {
     const company = await useApiFetch<ApiEnvelope<Company>>('/companies', {
@@ -97,7 +125,7 @@ export function useCompanies() {
     if (payload.logo) {
       await updateCompany(company.data.id, payload)
     } else {
-      await companiesState.refresh()
+      setCompanies([company.data, ...companiesResolved.value])
     }
   }
 
@@ -114,35 +142,46 @@ export function useCompanies() {
         body: formData
       })
     } else {
-      await useApiFetch<ApiEnvelope<Company>>(`/companies/${id}`, {
+      const response = await useApiFetch<ApiEnvelope<Company>>(`/companies/${id}`, {
         method: 'PUT',
         body: {
           name: payload.name.trim(),
           cnpj: normalizeCnpj(payload.cnpj)
         }
       })
+
+      setCompanies(
+        companiesResolved.value.map(company =>
+          company.id === id ? response.data : company
+        )
+      )
+      return
     }
 
-    await companiesState.refresh()
+    await refresh()
   }
 
   const deleteCompany = async (id: number) => {
     await useApiFetch(`/companies/${id}`, { method: 'DELETE' })
-    await companiesState.refresh()
+    setCompanies(companiesResolved.value.filter(company => company.id !== id))
   }
 
   const removeLogo = async (id: number) => {
     await useApiFetch(`/companies/${id}/logo`, { method: 'DELETE' })
-    await companiesState.refresh()
+    setCompanies(
+      companiesResolved.value.map(company =>
+        company.id === id ? { ...company, logo_url: null } : company
+      )
+    )
   }
 
   return {
     search,
     companies: filteredCompanies,
-    rawCompanies: companiesState.data,
-    status: companiesState.status,
-    error: companiesState.error,
-    refresh: companiesState.refresh,
+    rawCompanies: companiesResolved,
+    status,
+    error,
+    refresh,
     createCompany,
     updateCompany,
     deleteCompany,

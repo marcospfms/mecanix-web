@@ -149,14 +149,33 @@ export function mileageSourceLabel(
 export function useVehicles() {
   const auth = useAuth()
   const search = ref('')
+  const vehiclesState = ref<Vehicle[]>([])
+  const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const error = ref<unknown>(null)
 
-  const vehiclesState = useAPI<Vehicle[], ApiEnvelope<Vehicle[]>>('/vehicles', {
-    key: 'vehicles:list',
-    immediate: false,
-    server: false,
-    default: (): Vehicle[] => [],
-    transform: response => response.data
-  })
+  const refresh = async () => {
+    if (!auth.token.value) {
+      vehiclesState.value = []
+      status.value = 'idle'
+      error.value = null
+      return vehiclesState.value
+    }
+
+    status.value = 'pending'
+    error.value = null
+
+    try {
+      const response = await useApiFetch<ApiEnvelope<Vehicle[]>>('/vehicles')
+      vehiclesState.value = response.data
+      status.value = 'success'
+      return vehiclesState.value
+    } catch (err) {
+      vehiclesState.value = []
+      status.value = 'error'
+      error.value = err
+      throw err
+    }
+  }
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
@@ -164,22 +183,25 @@ export function useVehicles() {
       if (!hydrated) return
 
       if (!token) {
-        vehiclesState.data.value = []
-        vehiclesState.clear()
+        vehiclesState.value = []
+        status.value = 'idle'
+        error.value = null
         return
       }
 
-      await vehiclesState.refresh()
+      await refresh()
     },
     { immediate: true }
   )
 
+  const vehiclesResolved = computed<Vehicle[]>(() => {
+    const source = vehiclesState.value
+    return Array.isArray(source) ? source : []
+  })
+
   const filteredVehicles = computed(() => {
     const term = search.value.trim().toLowerCase()
-    const source = Array.isArray(vehiclesState.data.value)
-      ? vehiclesState.data.value
-      : []
-    const list = [...source].sort((a, b) => b.id - a.id)
+    const list = [...vehiclesResolved.value].sort((a, b) => b.id - a.id)
 
     if (!term) {
       return list
@@ -207,9 +229,15 @@ export function useVehicles() {
 
   const { createVehicle, updateVehicle, deleteVehicle } = useVehicleActions()
 
+  const setVehicles = (nextVehicles: Vehicle[]) => {
+    vehiclesState.value = nextVehicles
+    status.value = 'success'
+    error.value = null
+  }
+
   const createAndRefreshVehicle = async (payload: VehicleFormPayload) => {
     const vehicle = await createVehicle(payload)
-    await vehiclesState.refresh()
+    setVehicles([vehicle, ...vehiclesResolved.value])
     return vehicle
   }
 
@@ -218,22 +246,26 @@ export function useVehicles() {
     payload: Omit<VehicleFormPayload, 'customer_id'>
   ) => {
     const vehicle = await updateVehicle(id, payload)
-    await vehiclesState.refresh()
+    setVehicles(
+      vehiclesResolved.value.map(currentVehicle =>
+        currentVehicle.id === id ? vehicle : currentVehicle
+      )
+    )
     return vehicle
   }
 
   const deleteAndRefreshVehicle = async (id: number) => {
     await deleteVehicle(id)
-    await vehiclesState.refresh()
+    setVehicles(vehiclesResolved.value.filter(vehicle => vehicle.id !== id))
   }
 
   return {
     search,
     vehicles: filteredVehicles,
-    rawVehicles: vehiclesState.data,
-    status: vehiclesState.status,
-    error: vehiclesState.error,
-    refresh: vehiclesState.refresh,
+    rawVehicles: vehiclesResolved,
+    status,
+    error,
+    refresh,
     createVehicle: createAndRefreshVehicle,
     updateVehicle: updateAndRefreshVehicle,
     deleteVehicle: deleteAndRefreshVehicle

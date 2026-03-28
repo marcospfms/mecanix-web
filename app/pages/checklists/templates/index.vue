@@ -7,6 +7,7 @@ definePageMeta({
 })
 
 type FormMode = 'create' | 'edit'
+const ALL_VEHICLE_TYPES = '__all__'
 
 const toast = useAppToast()
 const manualRefreshing = ref(false)
@@ -31,7 +32,7 @@ const templatePendingDeletion = ref<ChecklistTemplate | null>(null)
 const editingTemplate = ref<ChecklistTemplate | null>(null)
 
 const name = ref('')
-const vehicleTypeId = ref<number | undefined>()
+const vehicleTypeValue = ref<string>(ALL_VEHICLE_TYPES)
 const formErrors = ref<{ name?: string }>({})
 
 const isLoading = computed(
@@ -48,10 +49,10 @@ const formDescription = computed(() =>
     : 'Atualize o nome e o tipo de veículo do template.'
 )
 const vehicleTypeOptions = computed(() => [
-  { label: 'Todos os tipos', value: undefined },
-  ...(Array.isArray(types.value) ? types.value : []).map(type => ({
+  { label: 'Todos os tipos', value: ALL_VEHICLE_TYPES },
+  ...types.value.map(type => ({
     label: type.name,
-    value: type.id
+    value: String(type.id)
   }))
 ])
 
@@ -67,7 +68,7 @@ const resolveVehicleTypeName = (value?: number | null) => {
 
 const resetForm = () => {
   name.value = ''
-  vehicleTypeId.value = undefined
+  vehicleTypeValue.value = ALL_VEHICLE_TYPES
   editingTemplate.value = null
   formErrors.value = {}
 }
@@ -83,7 +84,9 @@ const openEdit = (template: ChecklistTemplate) => {
   formMode.value = 'edit'
   editingTemplate.value = template
   name.value = template.name
-  vehicleTypeId.value = template.vehicle_type_id ?? undefined
+  vehicleTypeValue.value = template.vehicle_type_id
+    ? String(template.vehicle_type_id)
+    : ALL_VEHICLE_TYPES
   formOpen.value = true
 }
 
@@ -116,7 +119,9 @@ const handleSubmit = async () => {
     if (formMode.value === 'create') {
       const created = await createTemplate({
         name: name.value,
-        vehicle_type_id: vehicleTypeId.value ?? null
+        vehicle_type_id: vehicleTypeValue.value === ALL_VEHICLE_TYPES
+          ? null
+          : Number(vehicleTypeValue.value)
       })
 
       toast.success({
@@ -137,7 +142,9 @@ const handleSubmit = async () => {
     if (editingTemplate.value) {
       await updateTemplate(editingTemplate.value.id, {
         name: name.value,
-        vehicle_type_id: vehicleTypeId.value ?? null
+        vehicle_type_id: vehicleTypeValue.value === ALL_VEHICLE_TYPES
+          ? null
+          : Number(vehicleTypeValue.value)
       })
 
       toast.success({
@@ -438,8 +445,9 @@ const handleRefresh = async () => {
               Tipo de veículo
             </label>
             <USelect
-              v-model="vehicleTypeId"
+              v-model="vehicleTypeValue"
               :items="vehicleTypeOptions"
+              placeholder="Selecione..."
               size="xl"
               class="w-full"
             />

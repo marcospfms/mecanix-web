@@ -194,16 +194,16 @@ const loadMore = () => {
       <AppEmpty
         v-else-if="!hasVehicles"
         title="Nenhum veículo disponível"
-        description="Cadastre veículos para começar a realizar inspeções."
+        description="Cadastre primeiro um cliente e depois vincule um veículo para começar a realizar inspeções."
         icon="i-lucide-car-front"
       >
         <div class="pt-2">
           <UButton
             color="primary"
             icon="i-lucide-plus"
-            :to="{ name: 'vehicles' }"
+            :to="{ name: 'customers' }"
           >
-            Cadastrar veículo
+            Cadastrar cliente
           </UButton>
         </div>
       </AppEmpty>
