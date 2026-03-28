@@ -1,229 +1,143 @@
 <script setup lang="ts">
-import type { ChecklistTemplate } from '../../composables/useChecklistTemplates';
-import { useChecklistTemplates, useVehicleTypes } from '../../composables/useChecklistTemplates';
+import { getErrorMessage } from '../../composables/useAppToast'
+import type { Vehicle } from '../../composables/useVehicles'
+import type { ChecklistTemplate } from '../../composables/useChecklistTemplates'
 
 definePageMeta({
-  title: 'Templates de checklist'
-});
+  title: 'Checklists'
+})
 
-type FormMode = 'create' | 'edit';
+const toast = useAppToast()
+const visibleCount = ref(20)
+const manualRefreshing = ref(false)
 
-const toast = useAppToast();
-const manualRefreshing = ref(false);
-const {
-  search,
-  templates,
-  status,
-  error,
-  refresh,
-  createTemplate,
-  updateTemplate,
-  deleteTemplate
-} = useChecklistTemplates();
-const { types } = useVehicleTypes();
+const templateSelectorOpen = ref(false)
+const templateSelectorSubmitting = ref(false)
+const selectedVehicle = ref<Vehicle | null>(null)
+const selectedTemplateId = ref<number | undefined>()
 
-const formOpen = ref(false);
-const formMode = ref<FormMode>('create');
-const formSubmitting = ref(false);
-const confirmOpen = ref(false);
-const confirmLoading = ref(false);
-const templatePendingDeletion = ref<ChecklistTemplate | null>(null);
-const editingTemplate = ref<ChecklistTemplate | null>(null);
+const { search, vehicles, status, error, refresh } = useVehicles()
+const { templates, status: templatesStatus } = useChecklistTemplates()
+const { createChecklist } = useChecklistActions()
 
-const name = ref('');
-const vehicleTypeId = ref<number | undefined>();
-const formErrors = ref<{ name?: string }>({});
+const displayedVehicles = computed(() =>
+  vehicles.value.slice(0, visibleCount.value)
+)
+const hasMoreVehicles = computed(
+  () => vehicles.value.length > visibleCount.value
+)
+const isLoading = computed(
+  () => status.value === 'pending' && vehicles.value.length === 0
+)
+const hasVehicles = computed(() => vehicles.value.length > 0)
 
-const isLoading = computed(() => status.value === 'pending' && templates.value.length === 0);
-const isListRefreshing = computed(() => manualRefreshing.value);
-const hasTemplates = computed(() => templates.value.length > 0);
-const formTitle = computed(() =>
-  formMode.value === 'create' ? 'Novo template' : 'Editar template'
-);
-const formDescription = computed(() =>
-  formMode.value === 'create'
-    ? 'Crie um novo template para padronizar as inspeções.'
-    : 'Atualize o nome e o tipo de veículo do template.'
-);
-const vehicleTypeOptions = computed(() => [
-  { label: 'Todos os tipos', value: undefined },
-  ...((Array.isArray(types.value) ? types.value : []).map((type) => ({
-    label: type.name,
-    value: type.id
-  })))
-]);
+const templateOptions = computed(() =>
+  (Array.isArray(templates.value) ? templates.value : []).map(
+    (t: ChecklistTemplate) => ({
+      label: t.name,
+      value: t.id
+    })
+  )
+)
 
-const resolveVehicleTypeName = (value?: number | null) => {
-  if (!value) {
-    return 'Todos os tipos';
+watch(
+  () => search.value,
+  () => {
+    visibleCount.value = 20
   }
+)
 
-  return types.value?.find((type) => type.id === value)?.name ?? 'Tipo não encontrado';
-};
+const openTemplateSelector = (vehicle: Vehicle) => {
+  selectedVehicle.value = vehicle
+  selectedTemplateId.value = undefined
+  templateSelectorOpen.value = true
+}
 
-const resetForm = () => {
-  name.value = '';
-  vehicleTypeId.value = undefined;
-  editingTemplate.value = null;
-  formErrors.value = {};
-};
+const handleStartChecklist = async () => {
+  if (
+    !selectedVehicle.value
+    || !selectedTemplateId.value
+    || templateSelectorSubmitting.value
+  )
+    return
 
-const openCreate = () => {
-  resetForm();
-  formMode.value = 'create';
-  formOpen.value = true;
-};
-
-const openEdit = (template: ChecklistTemplate) => {
-  resetForm();
-  formMode.value = 'edit';
-  editingTemplate.value = template;
-  name.value = template.name;
-  vehicleTypeId.value = template.vehicle_type_id ?? undefined;
-  formOpen.value = true;
-};
-
-const openDetails = async (template: ChecklistTemplate) => {
-  await navigateTo({
-    name: 'checklists-templateId',
-    params: { templateId: String(template.id) }
-  });
-};
-
-const validateForm = () => {
-  const errors: { name?: string } = {};
-
-  if (!name.value.trim()) {
-    errors.name = 'Informe o nome do template.';
-  }
-
-  formErrors.value = errors;
-  return Object.keys(errors).length === 0;
-};
-
-const handleSubmit = async () => {
-  if (!validateForm() || formSubmitting.value) {
-    return;
-  }
-
-  formSubmitting.value = true;
+  templateSelectorSubmitting.value = true
 
   try {
-    if (formMode.value === 'create') {
-      const created = await createTemplate({
-        name: name.value,
-        vehicle_type_id: vehicleTypeId.value ?? null
-      });
-
-      toast.success({
-        title: 'Template criado',
-        description: 'O novo template foi adicionado com sucesso.'
-      });
-
-      formOpen.value = false;
-      resetForm();
-
-      await navigateTo({
-        name: 'checklists-templateId',
-        params: { templateId: String(created.id) }
-      });
-      return;
-    }
-
-    if (editingTemplate.value) {
-      await updateTemplate(editingTemplate.value.id, {
-        name: name.value,
-        vehicle_type_id: vehicleTypeId.value ?? null
-      });
-
-      toast.success({
-        title: 'Template atualizado',
-        description: 'Os dados do template foram salvos.'
-      });
-    }
-
-    formOpen.value = false;
-    resetForm();
-  } catch (err: any) {
-    toast.error({
-      title: 'Falha ao salvar',
-      description: err?.data?.message ?? err?.message ?? 'Não foi possível salvar o template.'
-    });
-  } finally {
-    formSubmitting.value = false;
-  }
-};
-
-const askDelete = (template: ChecklistTemplate) => {
-  templatePendingDeletion.value = template;
-  confirmOpen.value = true;
-};
-
-const handleDelete = async () => {
-  if (!templatePendingDeletion.value) return;
-
-  confirmLoading.value = true;
-
-  try {
-    await deleteTemplate(templatePendingDeletion.value.id);
+    const checklist = await createChecklist(
+      selectedVehicle.value.id,
+      selectedTemplateId.value
+    )
     toast.success({
-      title: 'Template removido',
-      description: 'O template foi excluído com sucesso.'
-    });
-    confirmOpen.value = false;
-    templatePendingDeletion.value = null;
-  } catch (err: any) {
+      title: 'Checklist criado',
+      description: 'O checklist foi iniciado com sucesso.'
+    })
+    templateSelectorOpen.value = false
+    await navigateTo({
+      name: 'checklists-checklistId',
+      params: { checklistId: String(checklist.id) }
+    })
+  } catch (err: unknown) {
     toast.error({
-      title: 'Falha ao excluir',
-      description: err?.data?.message ?? err?.message ?? 'Não foi possível excluir o template.'
-    });
+      title: 'Falha ao criar checklist',
+      description: getErrorMessage(err, 'Não foi possível iniciar o checklist.')
+    })
   } finally {
-    confirmLoading.value = false;
+    templateSelectorSubmitting.value = false
   }
-};
+}
+
+const openHistory = async (vehicle: Vehicle) => {
+  await navigateTo({
+    name: 'checklists-vehicles-vehicleId',
+    params: { vehicleId: String(vehicle.id) }
+  })
+}
 
 const handleRefresh = async () => {
-  if (manualRefreshing.value) {
-    return;
-  }
+  if (manualRefreshing.value) return
 
-  manualRefreshing.value = true;
+  manualRefreshing.value = true
 
   try {
     await Promise.all([
       refresh(),
-      new Promise((resolve) => setTimeout(resolve, 1000))
-    ]);
-  } catch (err: any) {
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao atualizar',
-      description: err?.data?.message ?? err?.message ?? 'Não foi possível atualizar a lista.'
-    });
+      description: getErrorMessage(err, 'Não foi possível atualizar a lista.')
+    })
   } finally {
-    manualRefreshing.value = false;
+    manualRefreshing.value = false
   }
-};
+}
+
+const loadMore = () => {
+  visibleCount.value += 20
+}
 </script>
 
 <template>
   <div class="space-y-5 sm:space-y-6">
     <section class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Checklists</p>
+      <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
+        Checklists
+      </p>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+      >
         <div class="space-y-2">
           <h1 class="text-3xl font-semibold tracking-tight text-highlighted">
-            Templates de checklist
+            Executar checklist
           </h1>
           <p class="max-w-2xl text-sm leading-6 text-toned">
-            Estruture os modelos de inspeção usados pela operação e mantenha os itens prontos
-            para execução no app.
+            Selecione um veículo para iniciar uma nova inspeção ou visualizar o
+            histórico de execuções.
           </p>
         </div>
-
-        <UButton color="primary" icon="i-lucide-plus" class="self-start sm:self-auto" @click="openCreate">
-          Novo template
-        </UButton>
       </div>
     </section>
 
@@ -231,12 +145,15 @@ const handleRefresh = async () => {
       <div class="flex items-center gap-2">
         <UInput
           v-model="search"
-          placeholder="Buscar por nome do template"
+          placeholder="Buscar por placa, modelo ou cliente"
           icon="i-lucide-search"
           size="xl"
           class="flex-1"
         >
-          <template v-if="search" #trailing>
+          <template
+            v-if="search"
+            #trailing
+          >
             <UButton
               color="neutral"
               variant="link"
@@ -253,15 +170,16 @@ const handleRefresh = async () => {
           variant="soft"
           icon="i-lucide-refresh-cw"
           size="xl"
-          aria-label="Atualizar templates"
+          aria-label="Atualizar veículos"
+          :loading="manualRefreshing"
           @click="handleRefresh"
         />
       </div>
 
       <AppLoading
-        v-if="isLoading || isListRefreshing"
-        title="Carregando templates"
-        description="Buscando os templates de checklist da sua operação."
+        v-if="isLoading || manualRefreshing"
+        title="Carregando veículos"
+        description="Buscando os veículos disponíveis para inspeção."
       />
 
       <UAlert
@@ -269,126 +187,182 @@ const handleRefresh = async () => {
         color="error"
         variant="soft"
         icon="i-lucide-circle-alert"
-        title="Falha ao carregar templates"
+        title="Falha ao carregar veículos"
         description="Atualize a página ou tente novamente em instantes."
       />
 
       <AppEmpty
-        v-else-if="!hasTemplates"
-        title="Nenhum template cadastrado"
-        description="Adicione o primeiro template para começar a padronizar as inspeções."
-        icon="i-lucide-clipboard-list"
+        v-else-if="!hasVehicles"
+        title="Nenhum veículo disponível"
+        description="Cadastre veículos para começar a realizar inspeções."
+        icon="i-lucide-car-front"
       >
         <div class="pt-2">
-          <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
-            Criar primeiro template
+          <UButton
+            color="primary"
+            icon="i-lucide-plus"
+            :to="{ name: 'vehicles' }"
+          >
+            Cadastrar veículo
           </UButton>
         </div>
       </AppEmpty>
 
-      <div v-else class="grid gap-3">
-        <UCard
-          v-for="template in templates"
-          :key="template.id"
-          class="w-full rounded-2xl border-default"
-        >
-          <div
-            class="space-y-4 cursor-pointer rounded-xl transition-colors hover:bg-muted/20"
-            role="button"
-            tabindex="0"
-            @click="openDetails(template)"
-            @keydown.enter.prevent="openDetails(template)"
-            @keydown.space.prevent="openDetails(template)"
+      <template v-else>
+        <div class="grid gap-3">
+          <UCard
+            v-for="vehicle in displayedVehicles"
+            :key="vehicle.id"
+            class="w-full rounded-2xl border-default"
           >
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex min-w-0 items-start gap-4">
-                <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]">
-                  <UIcon name="i-lucide-clipboard-list" class="size-6 text-primary" />
+            <div class="space-y-4">
+              <div class="flex items-start gap-4">
+                <div
+                  class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
+                >
+                  <UIcon
+                    name="i-lucide-car-front"
+                    class="size-6 text-primary"
+                  />
                 </div>
 
-                <div class="min-w-0 space-y-2">
-                  <div class="flex min-w-0 flex-wrap items-center gap-2">
-                    <p class="truncate text-base font-semibold text-highlighted">{{ template.name }}</p>
-                    <span class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                      {{ resolveVehicleTypeName(template.vehicle_type_id) }}
+                <div class="min-w-0 flex-1 space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="text-base font-semibold text-highlighted">
+                      {{ formatLicensePlate(vehicle.license_plate) }}
+                    </p>
+                    <span
+                      class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
+                    >
+                      {{ vehicle.customer?.name || 'Sem cliente' }}
                     </span>
                   </div>
 
                   <p class="text-sm text-toned">
-                    Atualizado em
-                    <NuxtTime
-                      :datetime="template.updated_at"
-                      year="numeric"
-                      month="2-digit"
-                      day="2-digit"
-                    />
+                    {{ vehicle.model || 'Modelo não informado' }}
+                    <template v-if="vehicle.model_year">
+                      · {{ vehicle.model_year }}
+                    </template>
                   </p>
+
+                  <div class="flex flex-wrap gap-2 pt-1 text-xs text-toned">
+                    <span class="inline-flex items-center gap-1.5">
+                      <UIcon
+                        name="i-lucide-gauge"
+                        class="size-3.5 text-primary"
+                      />
+                      {{ formatMileage(vehicle.latest_mileage) }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <UIcon
+                        name="i-lucide-clipboard-check"
+                        class="size-3.5 text-primary"
+                      />
+                      {{ vehicle.checklists_done ?? 0 }}/{{
+                        vehicle.checklists_total ?? 0
+                      }}
+                      checklists
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="flex items-center justify-between gap-3 border-t border-default/70 pt-3">
-              <div class="inline-flex items-center gap-2 text-sm font-medium text-primary">
-                <UIcon name="i-lucide-panel-top" class="size-4" />
-                <span>Ver itens do template</span>
-              </div>
-
-              <div class="flex gap-2 sm:justify-end">
+              <div
+                class="flex flex-wrap items-center gap-2 border-t border-default/70 pt-3"
+              >
+                <UButton
+                  color="primary"
+                  icon="i-lucide-play-circle"
+                  class="flex-1 sm:flex-none"
+                  @click="openTemplateSelector(vehicle)"
+                >
+                  Iniciar checklist
+                </UButton>
                 <UButton
                   color="neutral"
                   variant="soft"
-                  icon="i-lucide-pencil"
-                  @click.stop="openEdit(template)"
+                  icon="i-lucide-history"
+                  class="flex-1 sm:flex-none"
+                  @click="openHistory(vehicle)"
                 >
-                  Editar
-                </UButton>
-                <UButton
-                  color="error"
-                  variant="soft"
-                  icon="i-lucide-trash"
-                  @click.stop="askDelete(template)"
-                >
-                  Excluir
+                  Histórico
                 </UButton>
               </div>
             </div>
-          </div>
-        </UCard>
-      </div>
+          </UCard>
+        </div>
+
+        <div
+          v-if="hasMoreVehicles"
+          class="flex justify-center pt-2"
+        >
+          <UButton
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-chevron-down"
+            @click="loadMore"
+          >
+            Carregar mais
+          </UButton>
+        </div>
+      </template>
     </div>
 
+    <!-- Template selector -->
     <USlideover
-      v-model:open="formOpen"
+      v-model:open="templateSelectorOpen"
       side="right"
-      :title="formTitle"
-      :description="formDescription"
-      :ui="{ body: 'px-3 py-4 sm:px-4 sm:py-5', footer: 'justify-end px-3 sm:px-4' }"
+      title="Selecionar template"
+      description="Escolha o template de checklist para esta inspeção."
+      :ui="{
+        body: 'px-3 py-4 sm:px-4 sm:py-5',
+        footer: 'justify-end px-3 sm:px-4'
+      }"
     >
       <template #body>
         <div class="space-y-4">
-          <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-              Nome
-            </label>
-            <UInput
-              v-model="name"
-              placeholder="Ex.: Checklist de entrega"
-              size="xl"
-              class="w-full"
-              :maxlength="255"
-            />
-            <p v-if="formErrors.name" class="text-sm text-error">
-              {{ formErrors.name }}
+          <div
+            v-if="selectedVehicle"
+            class="rounded-2xl border border-default bg-muted/30 px-4 py-3"
+          >
+            <p
+              class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
+              Veículo selecionado
+            </p>
+            <p class="mt-1 text-base font-semibold text-highlighted">
+              {{ formatLicensePlate(selectedVehicle.license_plate) }}
+            </p>
+            <p class="text-sm text-toned">
+              {{ selectedVehicle.model || 'Modelo não informado' }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-              Tipo de veículo
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
+              Template de checklist
             </label>
+
+            <AppLoading
+              v-if="templatesStatus === 'pending'"
+              title="Carregando templates"
+              description=""
+            />
+
+            <AppEmpty
+              v-else-if="templateOptions.length === 0"
+              title="Nenhum template disponível"
+              description="Crie templates antes de iniciar uma inspeção."
+              icon="i-lucide-clipboard-list"
+            />
+
             <USelect
-              v-model="vehicleTypeId"
-              :items="vehicleTypeOptions"
+              v-else
+              v-model="selectedTemplateId"
+              :items="templateOptions"
+              placeholder="Selecione o template"
               size="xl"
               class="w-full"
             />
@@ -397,22 +371,23 @@ const handleRefresh = async () => {
       </template>
 
       <template #footer>
-        <UButton color="neutral" variant="ghost" @click="formOpen = false">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="templateSelectorOpen = false"
+        >
           Cancelar
         </UButton>
-        <UButton color="primary" :loading="formSubmitting" @click="handleSubmit">
-          {{ formMode === 'create' ? 'Criar template' : 'Salvar alterações' }}
+        <UButton
+          color="primary"
+          icon="i-lucide-play-circle"
+          :loading="templateSelectorSubmitting"
+          :disabled="!selectedTemplateId"
+          @click="handleStartChecklist"
+        >
+          Iniciar checklist
         </UButton>
       </template>
     </USlideover>
-
-    <AppConfirm
-      v-model:open="confirmOpen"
-      title="Excluir template"
-      :description="templatePendingDeletion ? `Você está removendo ${templatePendingDeletion.name}. Esta ação não pode ser desfeita.` : 'Esta ação não pode ser desfeita.'"
-      confirm-label="Excluir"
-      :loading="confirmLoading"
-      @confirm="handleDelete"
-    />
   </div>
 </template>

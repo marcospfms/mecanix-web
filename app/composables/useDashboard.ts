@@ -1,6 +1,6 @@
-import type { ComputedRef, Ref } from 'vue';
-import { useAuth } from './useAuth';
-import { useAPI } from './useAPI';
+import type { ComputedRef, Ref } from 'vue'
+import { useAuth } from './useAuth'
+import { useAPI } from './useAPI'
 
 export type DashboardRecentExecution = {
   id: number;
@@ -18,14 +18,14 @@ export type DashboardRecentExecution = {
   } | null;
   executed_at?: string;
   created_at: string;
-};
+}
 
 export type DashboardEmployeeStat = {
   user_id: number;
   name: string | null;
   username: string | null;
   total: number;
-};
+}
 
 export type DashboardStats = {
   total_companies?: number;
@@ -42,7 +42,7 @@ export type DashboardStats = {
   checklists_by_employee?: DashboardEmployeeStat[];
   subscription_plan?: string | null;
   subscription_status?: string | null;
-};
+}
 
 type DashboardApiPayload = {
   registrations?: {
@@ -65,12 +65,12 @@ type DashboardApiPayload = {
     plan?: string | null;
     status?: string | null;
   } | null;
-};
+}
 
 type ApiEnvelope<T> = {
   success: boolean;
   data: T;
-};
+}
 
 function mapDashboard(payload: DashboardApiPayload): DashboardStats {
   return {
@@ -89,53 +89,53 @@ function mapDashboard(payload: DashboardApiPayload): DashboardStats {
     checklists_by_employee: payload.checklists_by_employee,
     subscription_plan: payload.subscription?.plan,
     subscription_status: payload.subscription?.status
-  };
+  }
 }
 
 export function useDashboard(
   selectedEmployeeUserId?: Ref<number | null> | ComputedRef<number | null>
 ) {
-  const auth = useAuth();
-  const employeeUserId = selectedEmployeeUserId ?? computed(() => null);
+  const auth = useAuth()
+  const employeeUserId = selectedEmployeeUserId ?? computed(() => null)
 
   const endpoint = computed(() => {
-    const query = new URLSearchParams();
+    const query = new URLSearchParams()
 
     if (employeeUserId.value) {
-      query.set('employee_user_id', String(employeeUserId.value));
+      query.set('employee_user_id', String(employeeUserId.value))
     }
 
-    return query.size > 0 ? `/dashboard?${query.toString()}` : '/dashboard';
-  });
+    return query.size > 0 ? `/dashboard?${query.toString()}` : '/dashboard'
+  })
 
-  const dashboard = useAPI<ApiEnvelope<DashboardApiPayload>>(
-    () => endpoint.value,
-    {
-      key: () => `dashboard:${employeeUserId.value ?? 'all'}`,
-      immediate: false,
-      server: false,
-      default: () => ({ success: true, data: {} }),
-      transform: (response) => mapDashboard(response.data)
-    }
-  );
+  const dashboard = useAPI<
+    DashboardStats | null,
+    ApiEnvelope<DashboardApiPayload>
+  >(() => endpoint.value, {
+    key: () => `dashboard:${employeeUserId.value ?? 'all'}`,
+    immediate: false,
+    server: false,
+      default: (): DashboardStats | null => null,
+    transform: response => mapDashboard(response.data)
+  })
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
     async ([hydrated, token]) => {
       if (!hydrated) {
-        return;
+        return
       }
 
       if (!token) {
-        dashboard.data.value = null;
-        dashboard.clear();
-        return;
+        dashboard.data.value = null
+        dashboard.clear()
+        return
       }
 
-      await dashboard.refresh();
+      await dashboard.refresh()
     },
     { immediate: true }
-  );
+  )
 
-  return dashboard;
+  return dashboard
 }

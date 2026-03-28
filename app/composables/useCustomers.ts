@@ -6,7 +6,7 @@ export type Customer = {
   email: string | null;
   created_at: string;
   updated_at: string;
-};
+}
 
 export type CustomerVehicle = {
   id: number;
@@ -20,106 +20,109 @@ export type CustomerVehicle = {
   checklists_done?: number | null;
   created_at: string;
   updated_at: string;
-};
+}
 
 type ApiEnvelope<T> = {
   success: boolean;
   data: T;
   message?: string;
-};
+}
 
 type CustomerFormPayload = {
   name: string;
   tax_id: string;
   phone?: string | null;
   email?: string | null;
-};
+}
 
 function onlyDigits(value: string) {
-  return value.replace(/\D/g, '');
+  return value.replace(/\D/g, '')
 }
 
 export function formatTaxId(value: string) {
-  const digits = onlyDigits(value);
+  const digits = onlyDigits(value)
 
   if (digits.length <= 11) {
     return digits
       .replace(/^(\d{3})(\d)/, '$1.$2')
       .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-      .replace(/\.(\d{3})(\d)/, '.$1-$2');
+      .replace(/\.(\d{3})(\d)/, '.$1-$2')
   }
 
   return digits
     .replace(/^(\d{2})(\d)/, '$1.$2')
     .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
     .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2');
+    .replace(/(\d{4})(\d)/, '$1-$2')
 }
 
 export function formatBrPhone(value?: string | null) {
-  if (!value) return '-';
+  if (!value) return '-'
 
-  const digits = onlyDigits(value);
+  const digits = onlyDigits(value)
 
   if (digits.length <= 10) {
     return digits
       .replace(/^(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{4})(\d)/, '$1-$2');
+      .replace(/(\d{4})(\d)/, '$1-$2')
   }
 
   return digits
     .replace(/^(\d{2})(\d)/, '($1) $2')
-    .replace(/(\d{5})(\d)/, '$1-$2');
+    .replace(/(\d{5})(\d)/, '$1-$2')
 }
 
 export function useCustomers() {
-  const auth = useAuth();
-  const search = ref('');
+  const auth = useAuth()
+  const search = ref('')
 
-  const customersState = useAPI<ApiEnvelope<Customer[]>>('/customers', {
-    key: 'customers:list',
-    immediate: false,
-    server: false,
-    default: () => ({ success: true, data: [] }),
-    transform: (response) => response.data
-  });
+  const customersState = useAPI<Customer[], ApiEnvelope<Customer[]>>(
+    '/customers',
+    {
+      key: 'customers:list',
+      immediate: false,
+      server: false,
+      default: (): Customer[] => [],
+      transform: response => response.data
+    }
+  )
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
     async ([hydrated, token]) => {
-      if (!hydrated) return;
+      if (!hydrated) return
 
       if (!token) {
-        customersState.data.value = [];
-        customersState.clear();
-        return;
+        customersState.data.value = []
+        customersState.clear()
+        return
       }
 
-      await customersState.refresh();
+      await customersState.refresh()
     },
     { immediate: true }
-  );
+  )
 
   const filteredCustomers = computed(() => {
-    const term = search.value.trim().toLowerCase();
+    const term = search.value.trim().toLowerCase()
 
     if (!term) {
-      return customersState.data.value ?? [];
+      return customersState.data.value ?? []
     }
 
     return (customersState.data.value ?? []).filter((customer) => {
-      const taxDigits = onlyDigits(customer.tax_id);
-      const phoneDigits = onlyDigits(customer.phone ?? '');
+      const taxDigits = onlyDigits(customer.tax_id)
+      const phoneDigits = onlyDigits(customer.phone ?? '')
 
       return (
-        customer.name.toLowerCase().includes(term) ||
-        customer.tax_id.toLowerCase().includes(term) ||
-        taxDigits.includes(onlyDigits(term)) ||
-        phoneDigits.includes(onlyDigits(term)) ||
-        (customer.email ?? '').toLowerCase().includes(term)
-      );
-    });
-  });
+        customer.name.toLowerCase().includes(term)
+        || customer.tax_id.toLowerCase().includes(term)
+        || taxDigits.includes(onlyDigits(term))
+        || phoneDigits.includes(onlyDigits(term))
+        || (customer.email ?? '').toLowerCase().includes(term)
+      )
+    })
+  })
 
   const createCustomer = async (payload: CustomerFormPayload) => {
     const response = await useApiFetch<ApiEnvelope<Customer>>('/customers', {
@@ -130,31 +133,34 @@ export function useCustomers() {
         phone: payload.phone ? onlyDigits(payload.phone).slice(0, 13) : null,
         email: payload.email?.trim() || null
       }
-    });
+    })
 
-    await customersState.refresh();
-    return response.data;
-  };
+    await customersState.refresh()
+    return response.data
+  }
 
   const updateCustomer = async (id: number, payload: CustomerFormPayload) => {
-    const response = await useApiFetch<ApiEnvelope<Customer>>(`/customers/${id}`, {
-      method: 'PUT',
-      body: {
-        name: payload.name.trim(),
-        tax_id: onlyDigits(payload.tax_id).slice(0, 14),
-        phone: payload.phone ? onlyDigits(payload.phone).slice(0, 13) : null,
-        email: payload.email?.trim() || null
+    const response = await useApiFetch<ApiEnvelope<Customer>>(
+      `/customers/${id}`,
+      {
+        method: 'PUT',
+        body: {
+          name: payload.name.trim(),
+          tax_id: onlyDigits(payload.tax_id).slice(0, 14),
+          phone: payload.phone ? onlyDigits(payload.phone).slice(0, 13) : null,
+          email: payload.email?.trim() || null
+        }
       }
-    });
+    )
 
-    await customersState.refresh();
-    return response.data;
-  };
+    await customersState.refresh()
+    return response.data
+  }
 
   const deleteCustomer = async (id: number) => {
-    await useApiFetch(`/customers/${id}`, { method: 'DELETE' });
-    await customersState.refresh();
-  };
+    await useApiFetch(`/customers/${id}`, { method: 'DELETE' })
+    await customersState.refresh()
+  }
 
   return {
     search,
@@ -166,71 +172,75 @@ export function useCustomers() {
     createCustomer,
     updateCustomer,
     deleteCustomer
-  };
+  }
 }
 
-export function useCustomer(customerId: Ref<number | null> | ComputedRef<number | null>) {
-  const auth = useAuth();
+export function useCustomer(
+  customerId: Ref<number | null> | ComputedRef<number | null>
+) {
+  const auth = useAuth()
 
-  const customer = useAPI<ApiEnvelope<Customer>>(
+  const customer = useAPI<Customer | null, ApiEnvelope<Customer>>(
     () => `/customers/${customerId.value}`,
     {
       key: () => `customers:${customerId.value ?? 'none'}`,
       immediate: false,
       server: false,
-      default: () => ({ success: true, data: null as unknown as Customer }),
-      transform: (response) => response.data
+      default: (): Customer | null => null,
+      transform: response => response.data
     }
-  );
+  )
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value, () => customerId.value],
     async ([hydrated, token, id]) => {
-      if (!hydrated || !id) return;
+      if (!hydrated || !id) return
 
       if (!token) {
-        customer.data.value = null;
-        customer.clear();
-        return;
+        customer.data.value = null
+        customer.clear()
+        return
       }
 
-      await customer.refresh();
+      await customer.refresh()
     },
     { immediate: true }
-  );
+  )
 
-  return customer;
+  return customer
 }
 
-export function useCustomerVehicles(customerId: Ref<number | null> | ComputedRef<number | null>) {
-  const auth = useAuth();
+export function useCustomerVehicles(
+  customerId: Ref<number | null> | ComputedRef<number | null>
+) {
+  const auth = useAuth()
 
-  const vehicles = useAPI<ApiEnvelope<CustomerVehicle[]>>(
+  const vehicles = useAPI<CustomerVehicle[], ApiEnvelope<CustomerVehicle[]>>(
     () => `/customers/${customerId.value}/vehicles`,
     {
       key: () => `customers:${customerId.value ?? 'none'}:vehicles`,
       immediate: false,
       server: false,
-      default: () => ({ success: true, data: [] }),
-      transform: (response) => response.data
+      default: (): CustomerVehicle[] => [],
+      transform: response => response.data
     }
-  );
+  )
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value, () => customerId.value],
     async ([hydrated, token, id]) => {
-      if (!hydrated || !id) return;
+      if (!hydrated || !id) return
 
       if (!token) {
-        vehicles.data.value = [];
-        vehicles.clear();
-        return;
+        vehicles.data.value = []
+        vehicles.clear()
+        return
       }
 
-      await vehicles.refresh();
+      await vehicles.refresh()
     },
     { immediate: true }
-  );
+  )
 
-  return vehicles;
+  return vehicles
 }

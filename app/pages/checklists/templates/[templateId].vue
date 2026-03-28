@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import type { ChecklistItem } from '../../composables/useChecklistTemplates';
-import {
-  useChecklistItems,
-  useChecklistTemplate,
-  useChecklistTemplateActions,
-  useVehicleTypes
-} from '../../composables/useChecklistTemplates';
+import { getErrorMessage } from '../../../composables/useAppToast'
+import type { ChecklistItem } from '../../../composables/useChecklistTemplates'
 
 definePageMeta({
   title: 'Itens do template'
-});
+})
 
-type ItemFormMode = 'create' | 'edit';
+type ItemFormMode = 'create' | 'edit'
 
-const route = useRoute('checklists-templateId');
-const toast = useAppToast();
-const templateId = computed(() => Number(route.params.templateId));
-const manualRefreshing = ref(false);
+const route = useRoute('checklists-templates-templateId')
+const toast = useAppToast()
+const templateId = computed(() => Number(route.params.templateId))
+const manualRefreshing = ref(false)
 
-const { data: template, status, error, refresh } = useChecklistTemplate(templateId);
+const {
+  data: template,
+  status,
+  error,
+  refresh
+} = useChecklistTemplate(templateId)
 const {
   items,
   status: itemsStatus,
@@ -27,127 +27,135 @@ const {
   createItem,
   updateItem,
   deleteItem
-} = useChecklistItems(templateId);
-const { types } = useVehicleTypes();
-const { deleteTemplate } = useChecklistTemplateActions();
+} = useChecklistItems(templateId)
+const { types } = useVehicleTypes()
+const { deleteTemplate } = useChecklistTemplateActions()
 
-const itemFormOpen = ref(false);
-const itemFormMode = ref<ItemFormMode>('create');
-const itemFormSubmitting = ref(false);
-const itemPendingDeletion = ref<ChecklistItem | null>(null);
-const itemConfirmOpen = ref(false);
-const itemConfirmLoading = ref(false);
-const templateConfirmOpen = ref(false);
-const templateConfirmLoading = ref(false);
+const itemFormOpen = ref(false)
+const itemFormMode = ref<ItemFormMode>('create')
+const itemFormSubmitting = ref(false)
+const itemPendingDeletion = ref<ChecklistItem | null>(null)
+const itemConfirmOpen = ref(false)
+const itemConfirmLoading = ref(false)
+const templateConfirmOpen = ref(false)
+const templateConfirmLoading = ref(false)
 
-const editingItem = ref<ChecklistItem | null>(null);
-const itemName = ref('');
-const itemDescription = ref('');
-const orderIndex = ref('');
-const isCompletable = ref(false);
-const allowsMultipleResponses = ref(false);
-const isRequired = ref(false);
-const options = ref<Array<{ id?: number; label: string; order_index: number }>>([]);
-const itemFormErrors = ref<{ name?: string; options?: string }>({});
+const editingItem = ref<ChecklistItem | null>(null)
+const itemName = ref('')
+const itemDescription = ref('')
+const orderIndex = ref('')
+const isCompletable = ref(false)
+const allowsMultipleResponses = ref(false)
+const isRequired = ref(false)
+const options = ref<Array<{ id?: number; label: string; order_index: number }>>(
+  []
+)
+const itemFormErrors = ref<{ name?: string; options?: string }>({})
 
 const isLoading = computed(
   () =>
-    (status.value === 'pending' && !template.value) ||
-    (itemsStatus.value === 'pending' && items.value.length === 0)
-);
-const isDataRefreshing = computed(() => manualRefreshing.value && !!template.value);
-const hasItems = computed(() => items.value.length > 0);
+    (status.value === 'pending' && !template.value)
+    || (itemsStatus.value === 'pending' && items.value.length === 0)
+)
+const isDataRefreshing = computed(
+  () => manualRefreshing.value && !!template.value
+)
+const hasItems = computed(() => items.value.length > 0)
 
 const itemFormTitle = computed(() =>
   itemFormMode.value === 'create' ? 'Novo item' : 'Editar item'
-);
+)
 const itemFormDescription = computed(() =>
   itemFormMode.value === 'create'
     ? 'Adicione um novo item ao template.'
     : 'Atualize os dados do item selecionado.'
-);
+)
 
 const resolveVehicleTypeName = (value?: number | null) => {
   if (!value) {
-    return 'Todos os tipos';
+    return 'Todos os tipos'
   }
 
-  return types.value?.find((type) => type.id === value)?.name ?? 'Tipo não encontrado';
-};
+  return (
+    types.value?.find(type => type.id === value)?.name ?? 'Tipo não encontrado'
+  )
+}
 
 const resetItemForm = () => {
-  itemName.value = '';
-  itemDescription.value = '';
-  orderIndex.value = '';
-  isCompletable.value = false;
-  allowsMultipleResponses.value = false;
-  isRequired.value = false;
-  options.value = [];
-  editingItem.value = null;
-  itemFormErrors.value = {};
-};
+  itemName.value = ''
+  itemDescription.value = ''
+  orderIndex.value = ''
+  isCompletable.value = false
+  allowsMultipleResponses.value = false
+  isRequired.value = false
+  options.value = []
+  editingItem.value = null
+  itemFormErrors.value = {}
+}
 
 const addOption = () => {
   options.value.push({
     label: '',
     order_index: options.value.length
-  });
-};
+  })
+}
 
 const removeOption = (index: number) => {
-  options.value.splice(index, 1);
+  options.value.splice(index, 1)
   options.value = options.value.map((option, position) => ({
     ...option,
     order_index: position
-  }));
-};
+  }))
+}
 
 const openCreate = () => {
-  resetItemForm();
-  itemFormMode.value = 'create';
-  itemFormOpen.value = true;
-};
+  resetItemForm()
+  itemFormMode.value = 'create'
+  itemFormOpen.value = true
+}
 
 const openEdit = (item: ChecklistItem) => {
-  resetItemForm();
-  itemFormMode.value = 'edit';
-  editingItem.value = item;
-  itemName.value = item.name;
-  itemDescription.value = item.description ?? '';
-  orderIndex.value = String(item.order_index);
-  isCompletable.value = item.is_completable;
-  allowsMultipleResponses.value = item.allows_multiple_responses;
-  isRequired.value = item.is_required;
-  options.value = (item.options ?? []).map((option) => ({
+  resetItemForm()
+  itemFormMode.value = 'edit'
+  editingItem.value = item
+  itemName.value = item.name
+  itemDescription.value = item.description ?? ''
+  orderIndex.value = String(item.order_index)
+  isCompletable.value = item.is_completable
+  allowsMultipleResponses.value = item.allows_multiple_responses
+  isRequired.value = item.is_required
+  options.value = (item.options ?? []).map(option => ({
     id: option.id,
     label: option.label,
     order_index: option.order_index
-  }));
-  itemFormOpen.value = true;
-};
+  }))
+  itemFormOpen.value = true
+}
 
 const validateItemForm = () => {
-  const errors: { name?: string; options?: string } = {};
+  const errors: { name?: string; options?: string } = {}
 
   if (!itemName.value.trim()) {
-    errors.name = 'Informe o nome do item.';
+    errors.name = 'Informe o nome do item.'
   }
 
-  const hasBlankOption = options.value.some((option) => option.label.trim().length === 0);
+  const hasBlankOption = options.value.some(
+    option => option.label.trim().length === 0
+  )
   if (hasBlankOption) {
-    errors.options = 'Preencha ou remova as opções vazias.';
+    errors.options = 'Preencha ou remova as opções vazias.'
   }
 
-  itemFormErrors.value = errors;
-  return Object.keys(errors).length === 0;
-};
+  itemFormErrors.value = errors
+  return Object.keys(errors).length === 0
+}
 
 const handleItemSubmit = async () => {
   if (!validateItemForm() || itemFormSubmitting.value) {
-    return;
+    return
   }
 
-  itemFormSubmitting.value = true;
+  itemFormSubmitting.value = true
 
   try {
     const payload = {
@@ -161,121 +169,136 @@ const handleItemSubmit = async () => {
         label: option.label,
         order_index: index
       }))
-    };
+    }
 
     if (itemFormMode.value === 'create') {
-      await createItem(payload);
+      await createItem(payload)
       toast.success({
         title: 'Item criado',
         description: 'O novo item foi adicionado ao template.'
-      });
+      })
     } else if (editingItem.value) {
-      await updateItem(editingItem.value.id, payload);
+      await updateItem(editingItem.value.id, payload)
       toast.success({
         title: 'Item atualizado',
         description: 'Os dados do item foram salvos.'
-      });
+      })
     }
 
-    itemFormOpen.value = false;
-    resetItemForm();
-  } catch (err: any) {
+    itemFormOpen.value = false
+    resetItemForm()
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao salvar',
-      description: err?.data?.message ?? err?.message ?? 'Não foi possível salvar o item.'
-    });
+      description: getErrorMessage(err, 'Não foi possível salvar o item.')
+    })
   } finally {
-    itemFormSubmitting.value = false;
+    itemFormSubmitting.value = false
   }
-};
+}
 
 const askItemDelete = (item: ChecklistItem) => {
-  itemPendingDeletion.value = item;
-  itemConfirmOpen.value = true;
-};
+  itemPendingDeletion.value = item
+  itemConfirmOpen.value = true
+}
 
 const handleItemDelete = async () => {
-  if (!itemPendingDeletion.value) return;
+  if (!itemPendingDeletion.value) return
 
-  itemConfirmLoading.value = true;
+  itemConfirmLoading.value = true
 
   try {
-    await deleteItem(itemPendingDeletion.value.id);
+    await deleteItem(itemPendingDeletion.value.id)
     toast.success({
       title: 'Item removido',
       description: 'O item foi excluído com sucesso.'
-    });
-    itemConfirmOpen.value = false;
-    itemPendingDeletion.value = null;
-  } catch (err: any) {
+    })
+    itemConfirmOpen.value = false
+    itemPendingDeletion.value = null
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao excluir',
-      description: err?.data?.message ?? err?.message ?? 'Não foi possível excluir o item.'
-    });
+      description: getErrorMessage(err, 'Não foi possível excluir o item.')
+    })
   } finally {
-    itemConfirmLoading.value = false;
+    itemConfirmLoading.value = false
   }
-};
+}
 
 const handleTemplateDelete = async () => {
-  if (!template.value) return;
+  if (!template.value) return
 
-  templateConfirmLoading.value = true;
+  templateConfirmLoading.value = true
 
   try {
-    await deleteTemplate(template.value.id);
+    await deleteTemplate(template.value.id)
     toast.success({
       title: 'Template removido',
       description: 'O template foi excluído com sucesso.'
-    });
-    templateConfirmOpen.value = false;
-    await navigateTo({ name: 'checklists' });
-  } catch (err: any) {
+    })
+    templateConfirmOpen.value = false
+    await navigateTo({ name: 'checklists-templates' })
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao excluir',
-      description: err?.data?.message ?? err?.message ?? 'Não foi possível excluir o template.'
-    });
+      description: getErrorMessage(err, 'Não foi possível excluir o template.')
+    })
   } finally {
-    templateConfirmLoading.value = false;
+    templateConfirmLoading.value = false
   }
-};
+}
 
 const handleRefresh = async () => {
   if (manualRefreshing.value) {
-    return;
+    return
   }
 
-  manualRefreshing.value = true;
+  manualRefreshing.value = true
 
   try {
     await Promise.all([
       refresh(),
       refreshItems(),
-      new Promise((resolve) => setTimeout(resolve, 1000))
-    ]);
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ])
   } catch {
     toast.error({
       title: 'Falha ao atualizar',
       description: 'Não foi possível recarregar o template.'
-    });
+    })
   } finally {
-    manualRefreshing.value = false;
+    manualRefreshing.value = false
   }
-};
+}
 </script>
 
 <template>
   <div class="space-y-5 sm:space-y-6">
     <section class="space-y-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Checklists</p>
+      <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
+        Checklists
+      </p>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+      >
         <div class="space-y-2">
+          <NuxtLink
+            :to="{ name: 'checklists-templates' }"
+            class="inline-flex items-center gap-1.5 text-sm text-toned transition-colors hover:text-highlighted"
+          >
+            <UIcon
+              name="i-lucide-arrow-left"
+              class="size-4"
+            />
+            Templates
+          </NuxtLink>
           <h1 class="text-3xl font-semibold tracking-tight text-highlighted">
             {{ template?.name || 'Itens do template' }}
           </h1>
           <p class="max-w-2xl text-sm leading-6 text-toned">
-            Gerencie os itens e as opções de resposta deste template de checklist.
+            Gerencie os itens e as opções de resposta deste template de
+            checklist.
           </p>
         </div>
 
@@ -307,22 +330,36 @@ const handleRefresh = async () => {
 
     <template v-else-if="template">
       <UCard class="rounded-2xl border-default">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div
+          class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+        >
           <div class="space-y-3">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              <span
+                class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary"
+              >
                 {{ resolveVehicleTypeName(template.vehicle_type_id) }}
               </span>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Nome</p>
-                <p class="mt-1 text-base text-highlighted">{{ template.name }}</p>
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                >
+                  Nome
+                </p>
+                <p class="mt-1 text-base text-highlighted">
+                  {{ template.name }}
+                </p>
               </div>
 
               <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Atualizado em</p>
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                >
+                  Atualizado em
+                </p>
                 <p class="mt-1 text-base text-highlighted">
                   <NuxtTime
                     :datetime="template.updated_at"
@@ -338,10 +375,19 @@ const handleRefresh = async () => {
           </div>
 
           <div class="flex flex-wrap gap-2 sm:justify-end">
-            <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
+            <UButton
+              color="primary"
+              icon="i-lucide-plus"
+              @click="openCreate"
+            >
               Novo item
             </UButton>
-            <UButton color="error" variant="soft" icon="i-lucide-trash" @click="templateConfirmOpen = true">
+            <UButton
+              color="error"
+              variant="soft"
+              icon="i-lucide-trash"
+              @click="templateConfirmOpen = true"
+            >
               Excluir template
             </UButton>
           </div>
@@ -350,7 +396,9 @@ const handleRefresh = async () => {
 
       <section class="space-y-3">
         <div class="flex items-center justify-between gap-3">
-          <h2 class="text-lg font-semibold text-highlighted">Itens do template</h2>
+          <h2 class="text-lg font-semibold text-highlighted">
+            Itens do template
+          </h2>
         </div>
 
         <AppEmpty
@@ -360,50 +408,82 @@ const handleRefresh = async () => {
           icon="i-lucide-list-checks"
         >
           <div class="pt-2">
-            <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
+            <UButton
+              color="primary"
+              icon="i-lucide-plus"
+              @click="openCreate"
+            >
               Criar primeiro item
             </UButton>
           </div>
         </AppEmpty>
 
-        <div v-else class="grid gap-3">
+        <div
+          v-else
+          class="grid gap-3"
+        >
           <UCard
             v-for="item in items"
             :key="item.id"
             class="rounded-2xl border-default"
           >
             <div class="space-y-4">
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+              >
                 <div class="space-y-2">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="rounded-full border border-default px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-toned">
+                    <span
+                      class="rounded-full border border-default px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-toned"
+                    >
                       #{{ item.order_index }}
                     </span>
-                    <p class="text-base font-semibold text-highlighted">{{ item.name }}</p>
+                    <p class="text-base font-semibold text-highlighted">
+                      {{ item.name }}
+                    </p>
                   </div>
 
-                  <p v-if="item.description" class="text-sm leading-6 text-toned">
+                  <p
+                    v-if="item.description"
+                    class="text-sm leading-6 text-toned"
+                  >
                     {{ item.description }}
                   </p>
 
                   <div class="flex flex-wrap gap-2 text-xs">
                     <span
                       class="rounded-full px-2.5 py-1 font-semibold uppercase tracking-[0.14em]"
-                      :class="item.is_required ? 'bg-error/10 text-error' : 'bg-muted text-toned'"
+                      :class="
+                        item.is_required
+                          ? 'bg-error/10 text-error'
+                          : 'bg-muted text-toned'
+                      "
                     >
                       {{ item.is_required ? 'Obrigatório' : 'Opcional' }}
                     </span>
                     <span
                       class="rounded-full px-2.5 py-1 font-semibold uppercase tracking-[0.14em]"
-                      :class="item.is_completable ? 'bg-primary/10 text-primary' : 'bg-muted text-toned'"
+                      :class="
+                        item.is_completable
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted text-toned'
+                      "
                     >
                       {{ item.is_completable ? 'Completável' : 'Sem check' }}
                     </span>
                     <span
                       class="rounded-full px-2.5 py-1 font-semibold uppercase tracking-[0.14em]"
-                      :class="item.allows_multiple_responses ? 'bg-warning/10 text-warning' : 'bg-muted text-toned'"
+                      :class="
+                        item.allows_multiple_responses
+                          ? 'bg-warning/10 text-warning'
+                          : 'bg-muted text-toned'
+                      "
                     >
-                      {{ item.allows_multiple_responses ? 'Múltipla escolha' : 'Resposta única' }}
+                      {{
+                        item.allows_multiple_responses
+                          ? 'Múltipla escolha'
+                          : 'Resposta única'
+                      }}
                     </span>
                   </div>
                 </div>
@@ -428,8 +508,15 @@ const handleRefresh = async () => {
                 </div>
               </div>
 
-              <div v-if="(item.options?.length ?? 0) > 0" class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Opções de resposta</p>
+              <div
+                v-if="(item.options?.length ?? 0) > 0"
+                class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
+              >
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                >
+                  Opções de resposta
+                </p>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <span
                     v-for="option in item.options"
@@ -451,12 +538,17 @@ const handleRefresh = async () => {
       side="right"
       :title="itemFormTitle"
       :description="itemFormDescription"
-      :ui="{ body: 'px-3 py-4 sm:px-4 sm:py-5', footer: 'justify-end px-3 sm:px-4' }"
+      :ui="{
+        body: 'px-3 py-4 sm:px-4 sm:py-5',
+        footer: 'justify-end px-3 sm:px-4'
+      }"
     >
       <template #body>
         <div class="space-y-4">
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Nome
             </label>
             <UInput
@@ -466,13 +558,18 @@ const handleRefresh = async () => {
               class="w-full"
               :maxlength="255"
             />
-            <p v-if="itemFormErrors.name" class="text-sm text-error">
+            <p
+              v-if="itemFormErrors.name"
+              class="text-sm text-error"
+            >
               {{ itemFormErrors.name }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Descrição
             </label>
             <UTextarea
@@ -484,7 +581,9 @@ const handleRefresh = async () => {
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Ordem
             </label>
             <UInput
@@ -496,18 +595,30 @@ const handleRefresh = async () => {
             />
           </div>
 
-          <div class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+          <div
+            class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4"
+          >
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Comportamento
             </label>
 
             <label class="flex items-center gap-3 text-sm text-highlighted">
-              <input v-model="isRequired" type="checkbox" class="size-4 rounded border-default" />
+              <input
+                v-model="isRequired"
+                type="checkbox"
+                class="size-4 rounded border-default"
+              >
               Item obrigatório
             </label>
 
             <label class="flex items-center gap-3 text-sm text-highlighted">
-              <input v-model="isCompletable" type="checkbox" class="size-4 rounded border-default" />
+              <input
+                v-model="isCompletable"
+                type="checkbox"
+                class="size-4 rounded border-default"
+              >
               Permite marcação de conclusão
             </label>
 
@@ -516,14 +627,16 @@ const handleRefresh = async () => {
                 v-model="allowsMultipleResponses"
                 type="checkbox"
                 class="size-4 rounded border-default"
-              />
+              >
               Permite múltiplas respostas
             </label>
           </div>
 
           <div class="space-y-3">
             <div class="flex items-center justify-between gap-3">
-              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              <label
+                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >
                 Opções de resposta
               </label>
               <UButton
@@ -537,15 +650,24 @@ const handleRefresh = async () => {
               </UButton>
             </div>
 
-            <p v-if="itemFormErrors.options" class="text-sm text-error">
+            <p
+              v-if="itemFormErrors.options"
+              class="text-sm text-error"
+            >
               {{ itemFormErrors.options }}
             </p>
 
-            <div v-if="options.length === 0" class="rounded-2xl border border-dashed border-default px-4 py-6 text-sm text-toned">
+            <div
+              v-if="options.length === 0"
+              class="rounded-2xl border border-dashed border-default px-4 py-6 text-sm text-toned"
+            >
               Sem opções configuradas. Use isso para itens com resposta fechada.
             </div>
 
-            <div v-else class="space-y-3">
+            <div
+              v-else
+              class="space-y-3"
+            >
               <div
                 v-for="(option, index) in options"
                 :key="`${index}-${option.id ?? 'new'}`"
@@ -572,10 +694,18 @@ const handleRefresh = async () => {
       </template>
 
       <template #footer>
-        <UButton color="neutral" variant="ghost" @click="itemFormOpen = false">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="itemFormOpen = false"
+        >
           Cancelar
         </UButton>
-        <UButton color="primary" :loading="itemFormSubmitting" @click="handleItemSubmit">
+        <UButton
+          color="primary"
+          :loading="itemFormSubmitting"
+          @click="handleItemSubmit"
+        >
           {{ itemFormMode === 'create' ? 'Criar item' : 'Salvar alterações' }}
         </UButton>
       </template>
@@ -584,7 +714,11 @@ const handleRefresh = async () => {
     <AppConfirm
       v-model:open="itemConfirmOpen"
       title="Excluir item"
-      :description="itemPendingDeletion ? `Você está removendo ${itemPendingDeletion.name}. Esta ação não pode ser desfeita.` : 'Esta ação não pode ser desfeita.'"
+      :description="
+        itemPendingDeletion
+          ? `Você está removendo ${itemPendingDeletion.name}. Esta ação não pode ser desfeita.`
+          : 'Esta ação não pode ser desfeita.'
+      "
       confirm-label="Excluir"
       :loading="itemConfirmLoading"
       @confirm="handleItemDelete"
@@ -593,7 +727,11 @@ const handleRefresh = async () => {
     <AppConfirm
       v-model:open="templateConfirmOpen"
       title="Excluir template"
-      :description="template ? `Você está removendo ${template.name}. Esta ação não pode ser desfeita.` : 'Esta ação não pode ser desfeita.'"
+      :description="
+        template
+          ? `Você está removendo ${template.name}. Esta ação não pode ser desfeita.`
+          : 'Esta ação não pode ser desfeita.'
+      "
       confirm-label="Excluir"
       :loading="templateConfirmLoading"
       @confirm="handleTemplateDelete"

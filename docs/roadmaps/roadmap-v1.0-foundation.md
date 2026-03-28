@@ -1,6 +1,6 @@
 # Roadmap V1.0 — Fundação (Mecanix Client)
 
-> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída · Fase 4 concluída · Fase 5 concluída · Fase 6 em andamento · Fase 7 em andamento  
+> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída · Fase 4 concluída · Fase 5 concluída · Fase 6 em andamento · Fase 7 em andamento · Fase 8 em andamento  
 > **Referência app mobile**: `mecanix-app/` — todas as funcionalidades abaixo espelham o app, exceto assinatura/pagamento
 
 ## Objetivo
@@ -9,14 +9,14 @@ App web (Nuxt 4 + Nuxt UI v4) para donos de oficina acompanharem dados e realiza
 
 ## Stack técnica
 
-| Camada          | Tecnologia                                                   |
-| --------------- | ------------------------------------------------------------ |
-| Framework       | Nuxt 4 + Vue 3                                               |
-| UI              | Nuxt UI v4 + TailwindCSS v4                                  |
-| Ícones          | `@iconify-json/lucide` + `@iconify-json/simple-icons`        |
-| HTTP            | `$fetch` nativo do Nuxt + composables personalizados         |
+| Camada          | Tecnologia                                                                       |
+| --------------- | -------------------------------------------------------------------------------- |
+| Framework       | Nuxt 4 + Vue 3                                                                   |
+| UI              | Nuxt UI v4 + TailwindCSS v4                                                      |
+| Ícones          | `@iconify-json/lucide` + `@iconify-json/simple-icons`                            |
+| HTTP            | `$fetch` nativo do Nuxt + composables personalizados                             |
 | Auth            | Google OAuth iniciado no frontend + token Sanctum persistido para consumo da API |
-| Package manager | yarn                                                         |
+| Package manager | yarn                                                                             |
 
 ## Premissas de arquitetura
 
@@ -63,13 +63,13 @@ NUXT_PUBLIC_APP_URL=http://localhost:3000
 
 ```ts
 interface User {
-	id: number;
-	name: string;
-	email: string | null;
-	is_admin: boolean;
-	is_employee: false; // client web só para owners
-	created_at: string;
-	updated_at: string;
+  id: number
+  name: string
+  email: string | null
+  is_admin: boolean
+  is_employee: false // client web só para owners
+  created_at: string
+  updated_at: string
 }
 ```
 
@@ -292,25 +292,43 @@ interface User {
 > **API**: `GET /api/vehicles/paginated` · `POST /api/vehicles/{id}/checklists` · `GET /api/vehicle-checklists/{id}` · `PUT /api/vehicle-checklist-items/{id}` · `GET /api/vehicle-checklists/{id}/pdf`  
 > **Referência**: `mecanix-app/app/(tabs)/checklists/`
 
-- [ ] Página `/checklists` — seleção de veículo:
-  - Campo de busca com debounce (mín 4 chars)
-  - Lista paginada: placa, modelo, cliente, última km, progresso de checklists
-  - Botão "Iniciar checklist" por veículo → abre seletor de template
-  - Link para detalhes do veículo
-- [ ] Drawer seletor de template — lista templates disponíveis (filtrado por tipo de veículo se o veículo tiver tipo)
-- [ ] Página `/checklists/vehicles/{vehicleId}` — histórico de execuções do veículo:
-  - Lista: nome, data, executado por, status (concluído/rascunho)
+- [x] Página `/checklists` — seleção inicial de veículo:
+  - Busca local por placa, modelo e cliente
+  - Lista com placa, modelo, cliente, última km e progresso de checklists
+  - Botão "Iniciar checklist" por veículo com seletor de template
+  - Botão "Histórico" por veículo
+- [ ] Evoluir `/checklists` para o contrato final do roadmap:
+  - Debounce com mínimo de 4 caracteres
+  - Paginação real via `GET /api/vehicles/paginated`
+  - Link explícito para detalhes do veículo na própria listagem
+- [x] Drawer seletor de template:
+  - Lista templates disponíveis e inicia nova execução
+- [ ] Filtrar templates por tipo de veículo quando o payload do veículo expuser essa informação
+- [x] Página `/checklists/vehicles/{vehicleId}` — histórico de execuções do veículo:
+  - Lista nome, data, executado por e status
   - Botão "Novo checklist"
-- [ ] Página `/checklists/{checklistId}` — detalhe / execução:
+  - Ação de exclusão
+- [x] Página `/checklists/{checklistId}` — detalhe / execução inicial:
+  - Exibe status da execução e dados do veículo
+  - Permite marcar itens completáveis
+  - Permite selecionar opções de resposta
+  - Permite editar notas por item
+  - Exibe executado por
+  - Exporta PDF
+  - Permite excluir a execução
+- [ ] Fechar o detalhe `/checklists/{checklistId}` conforme o roadmap final:
   - Campo de quilometragem no topo
-  - Lista de itens agrupados (se houver categorias)
-  - Por item: checkbox (is_checked), select de opções, campo de nota
+  - Agrupamento de itens, se houver categorias
   - Indicação visual de item obrigatório não preenchido
-  - Status atual (rascunho / concluído) — modo somente leitura se concluído
-  - Botão "Exportar PDF" (baixar PDF do checklist)
-  - Executado por: nome do funcionário (ou owner)
-- [ ] Composable `useVehicleChecklists()` — `list`, `create()`, `getDetail()`, `updateItem()`
-- [ ] Função `downloadChecklistPdf(checklistId)` — chama `/api/vehicle-checklists/{id}/pdf`, faz download do arquivo
+  - Modo somente leitura quando o checklist estiver concluído
+- [x] Composables para execução implementados:
+  - `useChecklistHistory(vehicleId)` para listagem do histórico
+  - `useChecklistDetail(checklistId)` para detalhe da execução
+  - `useChecklistActions()` para criar execução, atualizar itens, atualizar notas, excluir e gerar PDF
+- [ ] Consolidar ou renomear a camada de composables para refletir o contrato final planejado de `useVehicleChecklists()`
+- [x] Geração de PDF implementada via `generatePdf(checklistId)`
+
+> Situação atual da fase 8: em andamento. O fluxo principal de execução já existe no client web, com seleção de veículo, criação de checklist, histórico por veículo, detalhe da execução, atualização de itens/notas e exportação de PDF. Ainda faltam a paginação/busca remota da seleção inicial, o filtro de templates por tipo de veículo e alguns comportamentos finais do detalhe para encerrar a fase conforme o roadmap original.
 
 ---
 

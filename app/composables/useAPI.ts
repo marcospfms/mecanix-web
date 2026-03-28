@@ -1,19 +1,69 @@
-import type { UseFetchOptions } from 'nuxt/app';
+import type { AsyncData, NuxtError } from 'nuxt/app'
+import type { ComputedRef, MultiWatchSources, Ref } from 'vue'
 
-export function useAPI<T>(
-  url: string | (() => string),
-  options?: UseFetchOptions<T>
-) {
-  const { $api } = useNuxtApp();
+type MaybeGetter<T> = T | Ref<T> | ComputedRef<T> | (() => T)
 
-  return useFetch(url, {
-    ...options,
-    $fetch: $api as typeof $fetch
-  });
+type UseAPIOptions<TData, TRaw> = {
+  key?: MaybeGetter<string>;
+  immediate?: boolean;
+  server?: boolean;
+  lazy?: boolean;
+  deep?: boolean;
+  dedupe?: 'cancel' | 'defer';
+  watch?: MultiWatchSources | false;
+  default?: () => TData;
+  transform?: (response: TRaw) => TData | Promise<TData>;
 }
 
-export function useApiFetch<T>(url: string, options?: Parameters<typeof $fetch<T>>[1]) {
-  const { $api } = useNuxtApp();
+export function useAPI<TData, TRaw = TData>(
+  url: string | (() => string),
+  options?: UseAPIOptions<TData, TRaw>
+): AsyncData<TData, NuxtError<unknown> | undefined> {
+  const { $api } = useNuxtApp()
+  const resolvedUrl = typeof url === 'function' ? computed(url) : ref(url)
+  const { key, watch, ...restOptions } = options ?? {}
+  const asyncOptions: {
+    immediate?: boolean;
+    server?: boolean;
+    lazy?: boolean;
+    deep?: boolean;
+    dedupe?: 'cancel' | 'defer';
+    watch?: MultiWatchSources | false;
+    default?: () => TData;
+  } = {
+    ...restOptions,
+    watch:
+      watch === false
+        ? false
+        : (watch ?? (typeof url === 'function' ? [resolvedUrl] : undefined))
+  }
 
-  return $api<T>(url, options);
+  const handler = async () => {
+    const response = await $api<TRaw>(resolvedUrl.value)
+    return options?.transform
+      ? await options.transform(response)
+      : (response as TData)
+  }
+
+  if (key) {
+    return useAsyncData<TData>(
+      key,
+      handler,
+      asyncOptions
+    ) as AsyncData<TData, NuxtError<unknown> | undefined>
+  }
+
+  return useAsyncData<TData>(
+    handler,
+    asyncOptions
+  ) as AsyncData<TData, NuxtError<unknown> | undefined>
+}
+
+export function useApiFetch<T>(
+  url: string,
+  options?: Parameters<typeof $fetch<T>>[1]
+) {
+  const { $api } = useNuxtApp()
+
+  return $api<T>(url, options)
 }

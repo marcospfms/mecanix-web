@@ -1,12 +1,12 @@
-import { useAuth } from './useAuth';
-import { useAPI, useApiFetch } from './useAPI';
+import { useAuth } from './useAuth'
+import { useAPI, useApiFetch } from './useAPI'
 
 export type VehicleType = {
   id: number;
   name: string;
   created_at: string;
   updated_at: string;
-};
+}
 
 export type ChecklistTemplate = {
   id: number;
@@ -15,7 +15,7 @@ export type ChecklistTemplate = {
   name: string;
   created_at: string;
   updated_at: string;
-};
+}
 
 export type ChecklistItemOption = {
   id: number;
@@ -24,7 +24,7 @@ export type ChecklistItemOption = {
   order_index: number;
   created_at: string;
   updated_at: string;
-};
+}
 
 export type ChecklistItem = {
   id: number;
@@ -38,18 +38,18 @@ export type ChecklistItem = {
   options?: ChecklistItemOption[];
   created_at: string;
   updated_at: string;
-};
+}
 
 type ApiEnvelope<T> = {
   success: boolean;
   data: T;
   message?: string;
-};
+}
 
 type ChecklistTemplatePayload = {
   name: string;
   vehicle_type_id?: number | null;
-};
+}
 
 type ChecklistItemPayload = {
   name: string;
@@ -62,101 +62,122 @@ type ChecklistItemPayload = {
     label: string;
     order_index?: number | null;
   }> | null;
-};
+}
 
 export function useVehicleTypes() {
-  const auth = useAuth();
+  const auth = useAuth()
 
-  const vehicleTypesState = useAPI<VehicleType[]>('/vehicle-types', {
-    key: 'vehicle-types:list',
-    immediate: false,
-    server: false,
-    default: () => [],
-    transform: (response: ApiEnvelope<VehicleType[]>) => response.data
-  });
+  const vehicleTypesState = useAPI<VehicleType[], ApiEnvelope<VehicleType[]>>(
+    '/vehicle-types',
+    {
+      key: 'vehicle-types:list',
+      immediate: false,
+      server: false,
+      default: (): VehicleType[] => [],
+      transform: (response: ApiEnvelope<VehicleType[]>) => response.data
+    }
+  )
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
     async ([hydrated, token]) => {
-      if (!hydrated) return;
+      if (!hydrated) return
 
       if (!token) {
-        vehicleTypesState.data.value = [];
-        vehicleTypesState.clear();
-        return;
+        vehicleTypesState.data.value = []
+        vehicleTypesState.clear()
+        return
       }
 
-      await vehicleTypesState.refresh();
+      await vehicleTypesState.refresh()
     },
     { immediate: true }
-  );
+  )
+
+  const types = computed(() => {
+    const source = vehicleTypesState.data.value
+    return Array.isArray(source) ? source : []
+  })
 
   return {
-    types: vehicleTypesState.data,
+    types,
     status: vehicleTypesState.status,
     error: vehicleTypesState.error,
     refresh: vehicleTypesState.refresh
-  };
+  }
 }
 
 export function useChecklistTemplates() {
-  const auth = useAuth();
-  const search = ref('');
+  const auth = useAuth()
+  const search = ref('')
 
-  const templatesState = useAPI<ChecklistTemplate[]>('/checklist-templates', {
+  const templatesState = useAPI<
+    ChecklistTemplate[],
+    ApiEnvelope<ChecklistTemplate[]>
+  >('/checklist-templates', {
     key: 'checklist-templates:list',
     immediate: false,
     server: false,
-    default: () => [],
+    default: (): ChecklistTemplate[] => [],
     transform: (response: ApiEnvelope<ChecklistTemplate[]>) => response.data
-  });
+  })
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value],
     async ([hydrated, token]) => {
-      if (!hydrated) return;
+      if (!hydrated) return
 
       if (!token) {
-        templatesState.data.value = [];
-        templatesState.clear();
-        return;
+        templatesState.data.value = []
+        templatesState.clear()
+        return
       }
 
-      await templatesState.refresh();
+      await templatesState.refresh()
     },
     { immediate: true }
-  );
+  )
 
   const templates = computed(() => {
-    const source = Array.isArray(templatesState.data.value) ? templatesState.data.value : [];
-    const term = search.value.trim().toLowerCase();
-    const list = [...source].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    const source = Array.isArray(templatesState.data.value)
+      ? templatesState.data.value
+      : []
+    const term = search.value.trim().toLowerCase()
+    const list = [...source].sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt-BR')
+    )
 
     if (!term) {
-      return list;
+      return list
     }
 
-    return list.filter((template) => template.name.toLowerCase().includes(term));
-  });
+    return list.filter(template => template.name.toLowerCase().includes(term))
+  })
 
-  const { createTemplate, updateTemplate, deleteTemplate } = useChecklistTemplateActions();
+  const { createTemplate, updateTemplate, deleteTemplate }
+    = useChecklistTemplateActions()
 
-  const createAndRefreshTemplate = async (payload: ChecklistTemplatePayload) => {
-    const template = await createTemplate(payload);
-    await templatesState.refresh();
-    return template;
-  };
+  const createAndRefreshTemplate = async (
+    payload: ChecklistTemplatePayload
+  ) => {
+    const template = await createTemplate(payload)
+    await templatesState.refresh()
+    return template
+  }
 
-  const updateAndRefreshTemplate = async (id: number, payload: ChecklistTemplatePayload) => {
-    const template = await updateTemplate(id, payload);
-    await templatesState.refresh();
-    return template;
-  };
+  const updateAndRefreshTemplate = async (
+    id: number,
+    payload: ChecklistTemplatePayload
+  ) => {
+    const template = await updateTemplate(id, payload)
+    await templatesState.refresh()
+    return template
+  }
 
   const deleteAndRefreshTemplate = async (id: number) => {
-    await deleteTemplate(id);
-    await templatesState.refresh();
-  };
+    await deleteTemplate(id)
+    await templatesState.refresh()
+  }
 
   return {
     search,
@@ -168,95 +189,105 @@ export function useChecklistTemplates() {
     createTemplate: createAndRefreshTemplate,
     updateTemplate: updateAndRefreshTemplate,
     deleteTemplate: deleteAndRefreshTemplate
-  };
+  }
 }
 
-export function useChecklistTemplate(templateId: Ref<number | null> | ComputedRef<number | null>) {
-  const auth = useAuth();
+export function useChecklistTemplate(
+  templateId: Ref<number | null> | ComputedRef<number | null>
+) {
+  const auth = useAuth()
 
-  const templateState = useAPI<ChecklistTemplate | null>(
-    () => `/checklist-templates/${templateId.value}`,
-    {
-      key: () => `checklist-templates:${templateId.value ?? 'none'}`,
-      immediate: false,
-      server: false,
-      default: () => null,
-      transform: (response: ApiEnvelope<ChecklistTemplate>) => response.data
-    }
-  );
+  const templateState = useAPI<
+    ChecklistTemplate | null,
+    ApiEnvelope<ChecklistTemplate>
+  >(() => `/checklist-templates/${templateId.value}`, {
+    key: () => `checklist-templates:${templateId.value ?? 'none'}`,
+    immediate: false,
+    server: false,
+    default: (): ChecklistTemplate | null => null,
+    transform: (response: ApiEnvelope<ChecklistTemplate>) => response.data
+  })
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value, () => templateId.value],
     async ([hydrated, token, id]) => {
-      if (!hydrated || !id) return;
+      if (!hydrated || !id) return
 
       if (!token) {
-        templateState.data.value = null;
-        templateState.clear();
-        return;
+        templateState.data.value = null
+        templateState.clear()
+        return
       }
 
-      await templateState.refresh();
+      await templateState.refresh()
     },
     { immediate: true }
-  );
+  )
 
-  return templateState;
+  return templateState
 }
 
-export function useChecklistItems(templateId: Ref<number | null> | ComputedRef<number | null>) {
-  const auth = useAuth();
+export function useChecklistItems(
+  templateId: Ref<number | null> | ComputedRef<number | null>
+) {
+  const auth = useAuth()
 
-  const itemsState = useAPI<ChecklistItem[]>(
+  const itemsState = useAPI<ChecklistItem[], ApiEnvelope<ChecklistItem[]>>(
     () => `/checklist-templates/${templateId.value}/items`,
     {
       key: () => `checklist-templates:${templateId.value ?? 'none'}:items`,
       immediate: false,
       server: false,
-      default: () => [],
+      default: (): ChecklistItem[] => [],
       transform: (response: ApiEnvelope<ChecklistItem[]>) => response.data
     }
-  );
+  )
 
   watch(
     [() => auth.hydrated.value, () => auth.token.value, () => templateId.value],
     async ([hydrated, token, id]) => {
-      if (!hydrated || !id) return;
+      if (!hydrated || !id) return
 
       if (!token) {
-        itemsState.data.value = [];
-        itemsState.clear();
-        return;
+        itemsState.data.value = []
+        itemsState.clear()
+        return
       }
 
-      await itemsState.refresh();
+      await itemsState.refresh()
     },
     { immediate: true }
-  );
+  )
 
   const items = computed(() => {
-    const source = Array.isArray(itemsState.data.value) ? itemsState.data.value : [];
-    return [...source].sort((a, b) => a.order_index - b.order_index);
-  });
+    const source = Array.isArray(itemsState.data.value)
+      ? itemsState.data.value
+      : []
+    return [...source].sort((a, b) => a.order_index - b.order_index)
+  })
 
-  const { createItem, updateItem, deleteItem } = useChecklistItemActions(templateId);
+  const { createItem, updateItem, deleteItem }
+    = useChecklistItemActions(templateId)
 
   const createAndRefreshItem = async (payload: ChecklistItemPayload) => {
-    const item = await createItem(payload);
-    await itemsState.refresh();
-    return item;
-  };
+    const item = await createItem(payload)
+    await itemsState.refresh()
+    return item
+  }
 
-  const updateAndRefreshItem = async (id: number, payload: ChecklistItemPayload) => {
-    const item = await updateItem(id, payload);
-    await itemsState.refresh();
-    return item;
-  };
+  const updateAndRefreshItem = async (
+    id: number,
+    payload: ChecklistItemPayload
+  ) => {
+    const item = await updateItem(id, payload)
+    await itemsState.refresh()
+    return item
+  }
 
   const deleteAndRefreshItem = async (id: number) => {
-    await deleteItem(id);
-    await itemsState.refresh();
-  };
+    await deleteItem(id)
+    await itemsState.refresh()
+  }
 
   return {
     items,
@@ -267,49 +298,60 @@ export function useChecklistItems(templateId: Ref<number | null> | ComputedRef<n
     createItem: createAndRefreshItem,
     updateItem: updateAndRefreshItem,
     deleteItem: deleteAndRefreshItem
-  };
+  }
 }
 
 export function useChecklistTemplateActions() {
   const createTemplate = async (payload: ChecklistTemplatePayload) => {
-    const response = await useApiFetch<ApiEnvelope<ChecklistTemplate>>('/checklist-templates', {
-      method: 'POST',
-      body: {
-        name: payload.name.trim(),
-        vehicle_type_id: payload.vehicle_type_id ?? null
+    const response = await useApiFetch<ApiEnvelope<ChecklistTemplate>>(
+      '/checklist-templates',
+      {
+        method: 'POST',
+        body: {
+          name: payload.name.trim(),
+          vehicle_type_id: payload.vehicle_type_id ?? null
+        }
       }
-    });
+    )
 
-    return response.data;
-  };
+    return response.data
+  }
 
-  const updateTemplate = async (id: number, payload: ChecklistTemplatePayload) => {
-    const response = await useApiFetch<ApiEnvelope<ChecklistTemplate>>(`/checklist-templates/${id}`, {
-      method: 'PUT',
-      body: {
-        name: payload.name.trim(),
-        vehicle_type_id: payload.vehicle_type_id ?? null
+  const updateTemplate = async (
+    id: number,
+    payload: ChecklistTemplatePayload
+  ) => {
+    const response = await useApiFetch<ApiEnvelope<ChecklistTemplate>>(
+      `/checklist-templates/${id}`,
+      {
+        method: 'PUT',
+        body: {
+          name: payload.name.trim(),
+          vehicle_type_id: payload.vehicle_type_id ?? null
+        }
       }
-    });
+    )
 
-    return response.data;
-  };
+    return response.data
+  }
 
   const deleteTemplate = async (id: number) => {
-    await useApiFetch(`/checklist-templates/${id}`, { method: 'DELETE' });
-  };
+    await useApiFetch(`/checklist-templates/${id}`, { method: 'DELETE' })
+  }
 
   return {
     createTemplate,
     updateTemplate,
     deleteTemplate
-  };
+  }
 }
 
-export function useChecklistItemActions(templateId: Ref<number | null> | ComputedRef<number | null>) {
+export function useChecklistItemActions(
+  templateId: Ref<number | null> | ComputedRef<number | null>
+) {
   const normalizeOptions = (options?: ChecklistItemPayload['options']) => {
     if (!Array.isArray(options)) {
-      return [];
+      return []
     }
 
     return options
@@ -317,8 +359,8 @@ export function useChecklistItemActions(templateId: Ref<number | null> | Compute
         label: option.label.trim(),
         order_index: option.order_index ?? index
       }))
-      .filter((option) => option.label.length > 0);
-  };
+      .filter(option => option.label.length > 0)
+  }
 
   const createItem = async (payload: ChecklistItemPayload) => {
     const response = await useApiFetch<ApiEnvelope<ChecklistItem>>(
@@ -335,35 +377,38 @@ export function useChecklistItemActions(templateId: Ref<number | null> | Compute
           options: normalizeOptions(payload.options)
         }
       }
-    );
+    )
 
-    return response.data;
-  };
+    return response.data
+  }
 
   const updateItem = async (id: number, payload: ChecklistItemPayload) => {
-    const response = await useApiFetch<ApiEnvelope<ChecklistItem>>(`/checklist-items/${id}`, {
-      method: 'PUT',
-      body: {
-        name: payload.name.trim(),
-        description: payload.description?.trim() || null,
-        order_index: payload.order_index ?? null,
-        is_completable: payload.is_completable ?? false,
-        allows_multiple_responses: payload.allows_multiple_responses ?? false,
-        is_required: payload.is_required ?? false,
-        options: normalizeOptions(payload.options)
+    const response = await useApiFetch<ApiEnvelope<ChecklistItem>>(
+      `/checklist-items/${id}`,
+      {
+        method: 'PUT',
+        body: {
+          name: payload.name.trim(),
+          description: payload.description?.trim() || null,
+          order_index: payload.order_index ?? null,
+          is_completable: payload.is_completable ?? false,
+          allows_multiple_responses: payload.allows_multiple_responses ?? false,
+          is_required: payload.is_required ?? false,
+          options: normalizeOptions(payload.options)
+        }
       }
-    });
+    )
 
-    return response.data;
-  };
+    return response.data
+  }
 
   const deleteItem = async (id: number) => {
-    await useApiFetch(`/checklist-items/${id}`, { method: 'DELETE' });
-  };
+    await useApiFetch(`/checklist-items/${id}`, { method: 'DELETE' })
+  }
 
   return {
     createItem,
     updateItem,
     deleteItem
-  };
+  }
 }
