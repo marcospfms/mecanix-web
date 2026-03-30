@@ -1,6 +1,77 @@
 import { useAuth } from './useAuth'
 import { useApiFetch } from './useAPI'
 
+// ─── Permission types ────────────────────────────────────────────────
+export type PermissionActionKey = 'view' | 'create' | 'update' | 'delete'
+
+export type PermissionModuleKey =
+  | 'companies'
+  | 'customers'
+  | 'vehicles'
+  | 'checklist_templates'
+  | 'checklists'
+  | 'employees'
+
+export type PermissionActions = {
+  view: boolean;
+  create: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+export type EmployeePermissions = {
+  companies: PermissionActions;
+  customers: PermissionActions;
+  vehicles: PermissionActions;
+  checklist_templates: PermissionActions;
+  checklists: PermissionActions;
+  employees: PermissionActions;
+}
+
+export const permissionModules: Array<{ key: PermissionModuleKey; label: string; description: string }> = [
+  { key: 'companies', label: 'Lojas', description: 'Configurações e dados centrais da loja.' },
+  { key: 'customers', label: 'Clientes', description: 'Cadastro e manutenção de clientes.' },
+  { key: 'vehicles', label: 'Veículos', description: 'Cadastro, edição e exclusão de veículos.' },
+  { key: 'checklist_templates', label: 'Templates', description: 'Modelos usados para gerar checklists.' },
+  { key: 'checklists', label: 'Checklists', description: 'Execução, edição e histórico das inspeções.' },
+  { key: 'employees', label: 'Equipe', description: 'Acessos, funções e senhas da equipe.' },
+]
+
+export const permissionActions: Array<{ key: PermissionActionKey; label: string }> = [
+  { key: 'view', label: 'Ver' },
+  { key: 'create', label: 'Criar' },
+  { key: 'update', label: 'Editar' },
+  { key: 'delete', label: 'Excluir' },
+]
+
+export function getPermissionPreset(role: 'manager' | 'technician'): EmployeePermissions {
+  if (role === 'manager') {
+    return {
+      companies: { view: true, create: false, update: true, delete: false },
+      customers: { view: true, create: true, update: true, delete: false },
+      vehicles: { view: true, create: true, update: true, delete: false },
+      checklist_templates: { view: true, create: true, update: true, delete: false },
+      checklists: { view: true, create: true, update: true, delete: false },
+      employees: { view: true, create: true, update: true, delete: false },
+    }
+  }
+  return {
+    companies: { view: true, create: false, update: false, delete: false },
+    customers: { view: true, create: true, update: true, delete: false },
+    vehicles: { view: true, create: true, update: true, delete: false },
+    checklist_templates: { view: true, create: false, update: false, delete: false },
+    checklists: { view: true, create: true, update: true, delete: false },
+    employees: { view: false, create: false, update: false, delete: false },
+  }
+}
+
+export function detectRoleFromPermissions(permissions: EmployeePermissions): 'manager' | 'technician' | 'custom' {
+  if (JSON.stringify(permissions) === JSON.stringify(getPermissionPreset('manager'))) return 'manager'
+  if (JSON.stringify(permissions) === JSON.stringify(getPermissionPreset('technician'))) return 'technician'
+  return 'custom'
+}
+
+// ─── Employee types ──────────────────────────────────────────────────
 export type EmployeeUser = {
   id: number;
   name: string;
@@ -19,7 +90,9 @@ export type Employee = {
   company: EmployeeCompany;
   user_id: number;
   user: EmployeeUser;
-  role: 'manager' | 'technician';
+  role: 'manager' | 'technician' | 'custom';
+  preset_label?: string;
+  permissions: EmployeePermissions;
   is_active: boolean;
   boss_user_id: number;
   updated_by_user_id: number | null;
@@ -38,12 +111,14 @@ type EmployeeCreatePayload = {
   username: string;
   password: string;
   role: 'manager' | 'technician';
+  permissions: EmployeePermissions;
 }
 
 type EmployeeUpdatePayload = {
   name?: string;
   username?: string;
-  role?: 'manager' | 'technician';
+  role?: 'manager' | 'technician' | 'custom';
+  permissions?: EmployeePermissions;
   is_active?: boolean;
 }
 
@@ -134,7 +209,8 @@ export function useEmployees() {
           name: payload.name.trim(),
           username: payload.username.trim().toLowerCase(),
           password: payload.password,
-          role: payload.role
+          role: payload.role,
+          permissions: payload.permissions
         }
       }
     )

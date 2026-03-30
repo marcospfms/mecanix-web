@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { getErrorMessage } from '../composables/useAppToast'
-import { roleLabel } from '../composables/useEmployees'
-import type { Employee } from '../composables/useEmployees'
+import {
+  roleLabel,
+  permissionModules,
+  permissionActions,
+  getPermissionPreset,
+  detectRoleFromPermissions,
+} from '../composables/useEmployees'
+import type { Employee, EmployeePermissions, PermissionModuleKey, PermissionActionKey } from '../composables/useEmployees'
 import type { Company } from '../composables/useCompanies'
 
 definePageMeta({
@@ -37,8 +43,9 @@ const formCompanyId = ref<number | undefined>()
 const formName = ref('')
 const formUsername = ref('')
 const formPassword = ref('')
-const formRole = ref<'manager' | 'technician'>('technician')
+const formRole = ref<'manager' | 'technician' | 'custom'>('technician')
 const formIsActive = ref(true)
+const formPermissions = ref<EmployeePermissions>(getPermissionPreset('technician'))
 const formErrors = ref<{
   company_id?: string
   name?: string
@@ -46,6 +53,10 @@ const formErrors = ref<{
   password?: string
 }>({})
 
+const togglePermission = (module: PermissionModuleKey, action: PermissionActionKey) => {
+  formPermissions.value[module][action] = !formPermissions.value[module][action]
+  formRole.value = detectRoleFromPermissions(formPermissions.value)
+}
 // ─── Password reset ──────────────────────────────────────────────────
 const resetOpen = ref(false)
 const resetSubmitting = ref(false)
@@ -100,6 +111,7 @@ const resetForm = () => {
   formPassword.value = ''
   formRole.value = 'technician'
   formIsActive.value = true
+  formPermissions.value = getPermissionPreset('technician')
   editingEmployee.value = null
   formErrors.value = {}
 }
@@ -119,6 +131,7 @@ const openEdit = (emp: Employee) => {
   formUsername.value = emp.user.username ?? ''
   formRole.value = emp.role
   formIsActive.value = emp.is_active
+  formPermissions.value = JSON.parse(JSON.stringify(emp.permissions ?? getPermissionPreset(emp.role === 'custom' ? 'technician' : emp.role)))
   formOpen.value = true
 }
 
@@ -149,11 +162,13 @@ const handleSubmit = async () => {
 
   try {
     if (formMode.value === 'create') {
+      const createRole = formRole.value === 'custom' ? 'technician' : formRole.value
       await createEmployee(formCompanyId.value!, {
         name: formName.value,
         username: formUsername.value,
         password: formPassword.value,
-        role: formRole.value
+        role: createRole,
+        permissions: formPermissions.value
       })
       toast.success({ title: 'Funcionário criado', description: 'O acesso foi gerado com sucesso.' })
     }
@@ -162,6 +177,7 @@ const handleSubmit = async () => {
         name: formName.value,
         username: formUsername.value,
         role: formRole.value,
+        permissions: formPermissions.value,
         is_active: formIsActive.value
       })
       toast.success({ title: 'Funcionário atualizado', description: 'Os dados foram salvos.' })
@@ -573,15 +589,24 @@ const handleRefresh = async () => {
 
           <!-- Cargo -->
           <div class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-              Cargo
-            </label>
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                Cargo
+              </label>
+              <span
+                v-if="formRole === 'custom'"
+                class="rounded-full bg-warning/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-warning"
+              >
+                Personalizado
+              </span>
+            </div>
             <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
               <input
                 v-model="formRole"
                 type="radio"
                 value="technician"
                 class="accent-primary"
+                @change="formPermissions = getPermissionPreset('technician')"
               >
               <div>
                 <p class="font-medium">Técnico</p>
@@ -594,12 +619,58 @@ const handleRefresh = async () => {
                 type="radio"
                 value="manager"
                 class="accent-primary"
+                @change="formPermissions = getPermissionPreset('manager')"
               >
               <div>
                 <p class="font-medium">Gerente</p>
                 <p class="text-xs text-toned">Acesso expandido à operação da loja.</p>
               </div>
             </label>
+          </div>
+
+          <!-- Permissões -->
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                Permissões
+              </label>
+              <p class="mt-1 text-xs text-toned">
+                Ajuste individualmente o que este funcionário pode fazer em cada módulo.
+              </p>
+            </div>
+
+            <div class="space-y-3">
+              <div
+                v-for="mod in permissionModules"
+                :key="mod.key"
+                class="rounded-2xl border border-default bg-muted/20 p-4"
+              >
+                <div class="mb-3">
+                  <p class="text-sm font-semibold text-highlighted">
+                    {{ mod.label }}
+                  </p>
+                  <p class="text-xs text-toned">
+                    {{ mod.description }}
+                  </p>
+                </div>
+
+                <div class="space-y-0">
+                  <div
+                    v-for="action in permissionActions"
+                    :key="action.key"
+                    class="flex items-center justify-between border-t border-default py-2.5"
+                  >
+                    <span class="text-sm font-medium text-highlighted">{{ action.label }}</span>
+                    <input
+                      type="checkbox"
+                      :checked="formPermissions[mod.key][action.key]"
+                      class="size-4 cursor-pointer rounded accent-primary"
+                      @change="togglePermission(mod.key, action.key)"
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Toggle ativo/inativo (só no edit) -->
