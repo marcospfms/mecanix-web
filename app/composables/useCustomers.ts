@@ -207,6 +207,34 @@ export function useCustomers() {
   }
 }
 
+export function useCustomerActions() {
+  const updateCustomer = async (id: number, payload: CustomerFormPayload) => {
+    const response = await useApiFetch<ApiEnvelope<Customer>>(
+      `/customers/${id}`,
+      {
+        method: 'PUT',
+        body: {
+          name: payload.name.trim(),
+          tax_id: onlyDigits(payload.tax_id).slice(0, 14),
+          phone: payload.phone ? onlyDigits(payload.phone).slice(0, 13) : null,
+          email: payload.email?.trim() || null
+        }
+      }
+    )
+
+    return response.data
+  }
+
+  const deleteCustomer = async (id: number) => {
+    await useApiFetch(`/customers/${id}`, { method: 'DELETE' })
+  }
+
+  return {
+    updateCustomer,
+    deleteCustomer
+  }
+}
+
 export function useCustomer(
   customerId: Ref<number | null> | ComputedRef<number | null>
 ) {

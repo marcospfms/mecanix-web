@@ -33,6 +33,14 @@ export type VehicleMileageHistory = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  checklist?: {
+    id: number;
+    name: string;
+    is_completed: boolean;
+    completed_at: string | null;
+    created_at: string;
+    executed_by: { id: number; name: string } | null;
+  } | null;
 }
 
 export type VehicleChecklistExecutor = {
