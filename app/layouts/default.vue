@@ -217,6 +217,17 @@ const navigation = [
                   </div>
                 </template>
               </ClientOnly>
+              <div class="mt-3 flex items-center justify-between gap-2">
+                <UColorModeButton />
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-log-out"
+                  @click="auth.logout"
+                >
+                  Sair
+                </UButton>
+              </div>
             </div>
           </div>
         </div>

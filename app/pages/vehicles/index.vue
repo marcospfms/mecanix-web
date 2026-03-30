@@ -409,18 +409,11 @@ const loadMore = () => {
                   </div>
 
                   <div class="min-w-0 space-y-2">
-                    <div class="flex min-w-0 flex-wrap items-center gap-2">
-                      <p
-                        class="truncate text-base font-semibold text-highlighted"
-                      >
-                        {{ formatLicensePlate(vehicle.license_plate) }}
-                      </p>
-                      <span
-                        class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
-                      >
-                        {{ vehicle.customer?.name || 'Sem cliente' }}
-                      </span>
-                    </div>
+                    <p
+                      class="truncate text-base font-semibold text-highlighted"
+                    >
+                      {{ formatLicensePlate(vehicle.license_plate) }}
+                    </p>
 
                     <p class="text-sm text-toned">
                       {{ vehicle.model || 'Modelo não informado' }}
@@ -430,18 +423,6 @@ const loadMore = () => {
               </div>
 
               <div class="flex flex-wrap gap-2 text-sm">
-                <div
-                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned"
-                >
-                  <UIcon
-                    name="i-lucide-users"
-                    class="size-4 shrink-0 text-primary"
-                  />
-                  <span class="truncate">
-                    {{ vehicle.customer?.name || 'Cliente não vinculado' }}
-                  </span>
-                </div>
-
                 <div
                   class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned"
                 >

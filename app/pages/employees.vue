@@ -405,7 +405,7 @@ const handleRefresh = async () => {
               :key="emp.id"
               class="rounded-2xl border-default"
             >
-              <div class="flex items-start justify-between gap-4">
+              <div class="flex flex-col gap-3">
                 <!-- Avatar + info -->
                 <div class="flex min-w-0 items-start gap-4">
                   <div class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]">
@@ -416,7 +416,7 @@ const handleRefresh = async () => {
 
                   <div class="min-w-0 space-y-1.5">
                     <div class="flex flex-wrap items-center gap-2">
-                      <p class="truncate text-base font-semibold text-highlighted">
+                      <p class="text-base font-semibold text-highlighted">
                         {{ emp.user.name }}
                       </p>
                       <!-- Role badge -->
@@ -454,7 +454,7 @@ const handleRefresh = async () => {
                 </div>
 
                 <!-- Ações -->
-                <div class="flex shrink-0 flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2 border-t border-default/70 pt-3">
                   <UButton
                     color="neutral"
                     variant="soft"
