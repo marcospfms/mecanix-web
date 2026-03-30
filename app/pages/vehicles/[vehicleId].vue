@@ -8,7 +8,7 @@ definePageMeta({
 
 type MileageFormMode = 'create' | 'edit'
 
-const route = useRoute()
+const route = useRoute('vehicles-vehicleId')
 const toast = useAppToast()
 const vehicleId = computed(() => Number(route.params.vehicleId))
 const manualRefreshing = ref(false)

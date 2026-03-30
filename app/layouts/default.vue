@@ -58,7 +58,7 @@ const navigation = [
           <ul class="space-y-2">
             <li
               v-for="item in navigation"
-              :key="item.to"
+              :key="item.label"
             >
               <UButton
                 :to="item.to"
@@ -182,7 +182,7 @@ const navigation = [
             <ul class="space-y-2">
               <li
                 v-for="item in navigation"
-                :key="item.to"
+                :key="item.label"
               >
                 <UButton
                   :to="item.to"

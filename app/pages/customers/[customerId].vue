@@ -3,7 +3,7 @@ definePageMeta({
   title: 'Detalhes do cliente'
 })
 
-const route = useRoute()
+const route = useRoute('customers-customerId')
 const customerId = computed(() => Number(route.params.customerId))
 const { data: customer, status, error, refresh } = useCustomer(customerId)
 const {
@@ -119,13 +119,14 @@ const handleRefresh = async () => {
             >
               Cadastro
             </p>
-            <p class="mt-1 text-base text-highlighted">
-              {{
-                new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(
-                  new Date(customer.created_at)
-                )
-              }}
-            </p>
+            <NuxtTime
+              class="mt-1 text-base text-highlighted"
+              :datetime="customer.created_at"
+              locale="pt-BR"
+              day="2-digit"
+              month="2-digit"
+              year="numeric"
+            />
           </div>
         </div>
       </UCard>

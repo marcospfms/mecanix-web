@@ -23,11 +23,13 @@ const {
   updateChecklistItem,
   updateChecklistItemNotes,
   deleteChecklist,
-  generatePdf
+  generatePdf,
+  recordChecklistMileage
 } = useChecklistActions()
 
 const vehicleId = computed(() => checklist.value?.vehicle_id ?? null)
 const { data: vehicle } = useVehicle(vehicleId)
+const { data: checklistMileage } = useChecklistMileage(checklistId)
 
 const localChecked = reactive<Record<number, boolean>>({})
 const localNotes = reactive<Record<number, string>>({})
@@ -131,6 +133,61 @@ const handleNotesChange = (item: VehicleChecklistItem, notes: string) => {
   }, 1500)
 }
 
+const localMileage = ref('')
+const mileageSaved = ref(false)
+const mileageSaving = ref(false)
+
+// Pre-populate from existing checklist mileage record (priority)
+watch(
+  () => checklistMileage.value,
+  (km) => {
+    if (km) {
+      localMileage.value = String(km.mileage)
+      mileageSaved.value = true
+    }
+  },
+  { immediate: true }
+)
+
+// Fallback: use vehicle's latest mileage only if no checklist record yet
+watch(
+  () => vehicle.value?.latest_mileage,
+  (v) => {
+    if (v != null && !localMileage.value && !checklistMileage.value) {
+      localMileage.value = String(v)
+    }
+  },
+  { immediate: true }
+)
+
+const isReadonly = computed(() => checklist.value?.is_completed ?? false)
+
+const isRequiredAndUnfilled = (item: VehicleChecklistItem): boolean => {
+  if (!item.is_required) return false
+  if (item.is_completable) return !localChecked[item.id]
+  if ((item.options?.length ?? 0) > 0) return (localSelections[item.id]?.length ?? 0) === 0
+  return false
+}
+
+const handleSaveMileage = async () => {
+  const mileage = Number(localMileage.value)
+  if (!mileage || !vehicleId.value || mileageSaving.value) return
+
+  mileageSaving.value = true
+  try {
+    await recordChecklistMileage(vehicleId.value, checklistId.value, mileage)
+    mileageSaved.value = true
+    toast.success({ title: 'Quilometragem registrada' })
+  } catch (err: unknown) {
+    toast.error({
+      title: 'Falha ao salvar quilometragem',
+      description: getErrorMessage(err, 'Não foi possível registrar a quilometragem.')
+    })
+  } finally {
+    mileageSaving.value = false
+  }
+}
+
 const pdfLoading = ref(false)
 
 const handleExportPdf = async () => {
@@ -140,7 +197,12 @@ const handleExportPdf = async () => {
 
   try {
     const result = await generatePdf(checklistId.value)
-    window.open(result.url, '_blank', 'noopener,noreferrer')
+    await navigateTo(result.url, {
+      external: true,
+      open: {
+        target: '_blank'
+      }
+    })
   } catch (err: unknown) {
     toast.error({
       title: 'Falha ao gerar PDF',
@@ -414,10 +476,67 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
         </UCard>
       </div>
 
+      <!-- Quilometragem -->
+      <UCard class="rounded-2xl border-default">
+        <div class="space-y-3">
+          <div class="flex items-end gap-3">
+            <div class="flex-1 space-y-2">
+              <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                Quilometragem atual
+              </p>
+              <UInput
+                v-model="localMileage"
+                placeholder="Ex.: 85000"
+                inputmode="numeric"
+                size="xl"
+                class="w-full"
+                :disabled="isReadonly || mileageSaved"
+              />
+            </div>
+            <UButton
+              color="primary"
+              variant="soft"
+              icon="i-lucide-gauge"
+              size="xl"
+              :loading="mileageSaving"
+              :disabled="isReadonly || mileageSaved || !localMileage"
+              @click="handleSaveMileage"
+            >
+              {{ mileageSaved ? 'Registrado' : 'Registrar' }}
+            </UButton>
+          </div>
+          <p
+            v-if="mileageSaved && checklistMileage"
+            class="flex items-center gap-1.5 text-xs text-toned"
+          >
+            <UIcon
+              name="i-lucide-check-circle-2"
+              class="size-3.5 text-success"
+            />
+            Quilometragem registrada em
+            <NuxtTime
+              :datetime="checklistMileage.created_at"
+              month="2-digit"
+              day="2-digit"
+              year="numeric"
+            />
+          </p>
+        </div>
+      </UCard>
+
       <section class="space-y-3">
         <h2 class="text-lg font-semibold text-highlighted">
           Itens da inspeção
         </h2>
+
+        <UAlert
+          v-if="isReadonly"
+          color="success"
+          variant="soft"
+          icon="i-lucide-check-circle-2"
+          title="Inspeção concluída"
+          description="Este checklist está concluído. Os itens são exibidos em modo leitura."
+        />
 
         <AppEmpty
           v-if="!checklist.items?.length"
@@ -433,7 +552,12 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
           <UCard
             v-for="item in checklist.items"
             :key="item.id"
-            class="rounded-2xl border-default"
+            :class="[
+              'rounded-2xl',
+              isRequiredAndUnfilled(item) && !isReadonly
+                ? 'border-error/60 ring-1 ring-error/20'
+                : 'border-default'
+            ]"
           >
             <div class="space-y-4">
               <div class="flex items-start justify-between gap-3">
@@ -484,6 +608,7 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
                       : 'i-lucide-circle'
                   "
                   :loading="savingItems[item.id]"
+                  :disabled="isReadonly"
                   @click="handleCheckChange(item, !localChecked[item.id])"
                 >
                   {{
@@ -513,14 +638,15 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
                     v-for="option in item.options as VehicleChecklistItemOption[]"
                     :key="option.id"
                     type="button"
-                    class="rounded-full border px-3 py-1.5 text-sm font-medium transition-colors"
+                    class="rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     :class="
                       isOptionSelected(item.id, option.id)
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-default bg-muted/20 text-toned hover:border-primary/50 hover:text-highlighted'
                     "
+                    :disabled="isReadonly"
                     @click="
-                      handleOptionChange(
+                      !isReadonly && handleOptionChange(
                         item,
                         option.id,
                         !isOptionSelected(item.id, option.id)
@@ -543,6 +669,7 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
                   placeholder="Adicione observações sobre este item..."
                   class="w-full"
                   :rows="2"
+                  :disabled="isReadonly"
                   @update:model-value="
                     val => handleNotesChange(item, String(val ?? ''))
                   "

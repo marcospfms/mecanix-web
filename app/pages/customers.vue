@@ -87,7 +87,10 @@ const openEdit = (customer: Customer) => {
 }
 
 const openDetails = async (customer: Customer) => {
-  await navigateTo({ path: `/customers/${customer.id}` })
+  await navigateTo({
+    name: 'customers-customerId',
+    params: { customerId: String(customer.id) }
+  })
 }
 
 const validateForm = () => {
@@ -146,7 +149,10 @@ const handleSubmit = async () => {
 
       formOpen.value = false
       resetForm()
-      await navigateTo({ path: `/customers/${created.id}` })
+      await navigateTo({
+        name: 'customers-customerId',
+        params: { customerId: String(created.id) }
+      })
       return
     }
 

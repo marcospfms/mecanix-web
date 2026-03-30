@@ -8,7 +8,7 @@ definePageMeta({
 
 type FormMode = 'create' | 'edit'
 
-const route = useRoute()
+const route = useRoute('vehicles')
 const toast = useAppToast()
 const manualRefreshing = ref(false)
 const queryHandled = ref(false)

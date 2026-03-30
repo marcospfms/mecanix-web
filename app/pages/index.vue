@@ -143,15 +143,6 @@ const progressValue = computed(() =>
   Math.min(Math.max(statsResolved.value.checklists_completion_rate, 0), 100)
 )
 
-const formatDateTime = (value?: string) => {
-  if (!value) return '-'
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short'
-  }).format(new Date(value))
-}
-
 const handleRefresh = async () => {
   if (manualRefreshing.value) {
     return
@@ -458,13 +449,15 @@ const handleRefresh = async () => {
                       <p class="font-medium text-highlighted">
                         Data
                       </p>
-                      <p>
-                        {{
-                          formatDateTime(
-                            execution.executed_at ?? execution.created_at
-                          )
-                        }}
-                      </p>
+                      <NuxtTime
+                        :datetime="execution.executed_at ?? execution.created_at"
+                        locale="pt-BR"
+                        day="2-digit"
+                        month="2-digit"
+                        year="numeric"
+                        hour="2-digit"
+                        minute="2-digit"
+                      />
                     </div>
                   </div>
                 </div>
