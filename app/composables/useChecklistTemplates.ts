@@ -442,7 +442,7 @@ export function useChecklistItemActions(
         body: {
           name: payload.name.trim(),
           description: payload.description?.trim() || null,
-          order_index: payload.order_index ?? null,
+          ...(payload.order_index != null && { order_index: payload.order_index }),
           is_completable: payload.is_completable ?? false,
           allows_multiple_responses: payload.allows_multiple_responses ?? false,
           is_required: payload.is_required ?? false,

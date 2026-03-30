@@ -25,7 +25,8 @@ export function useAPI<TData, TRaw = TData>(
     typeof options?.key === 'function'
       ? computed(options.key)
       : options?.key
-  const { key, watch, ...restOptions } = options ?? {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { key, watch, transform: _transform, ...restOptions } = options ?? {}
   const asyncOptions: {
     immediate?: boolean;
     server?: boolean;
