@@ -6,7 +6,23 @@ const brandIconSrc = `${runtimeConfig.app.baseURL}branding/icon-transparent-sm.p
 const userName = computed(() => auth.user.value?.name ?? '')
 const userEmail = computed(() => auth.user.value?.email ?? '')
 
-const navigation = [
+type NavigationItem = {
+  label: string;
+  to: {
+    name:
+      | 'index'
+      | 'companies'
+      | 'checklists-templates'
+      | 'customers'
+      | 'employees'
+      | 'vehicles'
+      | 'checklists'
+      | 'profile';
+  };
+  icon: string;
+}
+
+const navigation: NavigationItem[] = [
   {
     label: 'Dashboard',
     to: { name: 'index' },

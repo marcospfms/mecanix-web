@@ -25,21 +25,13 @@ export function useAPI<TData, TRaw = TData>(
     = typeof options?.key === 'function' ? computed(options.key) : options?.key
 
   const { key, watch, transform: _transform, ...restOptions } = options ?? {}
-  const asyncOptions: {
-    immediate?: boolean;
-    server?: boolean;
-    lazy?: boolean;
-    deep?: boolean;
-    dedupe?: 'cancel' | 'defer';
-    watch?: MultiWatchSources | false;
-    default?: () => TData;
-  } = {
-    ...restOptions,
-    watch:
-      watch === false
-        ? false
-        : (watch ?? (typeof url === 'function' ? [resolvedUrl] : undefined))
-  }
+  const asyncKey = computed(() => {
+    if (resolvedKey && typeof resolvedKey !== 'string') {
+      return resolvedKey.value
+    }
+
+    return resolvedKey ?? `api:${resolvedUrl.value}`
+  })
 
   const handler = async () => {
     const response = await $api<TRaw>(resolvedUrl.value)
@@ -58,14 +50,14 @@ export function useAPI<TData, TRaw = TData>(
     return null as TData
   }
 
-  if (resolvedKey) {
-    return useAsyncData<TData>(resolvedKey, handler, asyncOptions) as AsyncData<
-      TData,
-      NuxtError<unknown> | undefined
-    >
-  }
-
-  return useAsyncData<TData>(handler, asyncOptions) as AsyncData<
+  return useAsyncData<TData>(asyncKey, handler, {
+    ...restOptions,
+    ...(watch === false
+      ? {}
+      : {
+          watch: watch ?? (typeof url === 'function' ? [resolvedUrl] : undefined)
+        })
+  } as never) as AsyncData<
     TData,
     NuxtError<unknown> | undefined
   >

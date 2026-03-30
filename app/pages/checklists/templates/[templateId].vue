@@ -383,6 +383,7 @@ const onDrop = async (dropIndex: number) => {
 
   const newItems = [...localItems.value]
   const [moved] = newItems.splice(from, 1)
+  if (!moved) return
   newItems.splice(dropIndex, 0, moved)
   localItems.value = newItems
 
