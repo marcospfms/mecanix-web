@@ -182,19 +182,20 @@ export function useChecklistMileage(
   const state = useAPI<
     VehicleMileageHistory | null,
     ApiEnvelope<VehicleMileageHistory>
-  >(
-    () => `/vehicle-checklists/${checklistId.value}/mileage-history`,
-    {
-      key: () => `checklists:${checklistId.value ?? 'none'}:mileage-history`,
-      immediate: false,
-      server: false,
-      default: (): VehicleMileageHistory | null => null,
-      transform: r => r.data ?? null
-    }
-  )
+  >(() => `/vehicle-checklists/${checklistId.value}/mileage-history`, {
+    key: () => `checklists:${checklistId.value ?? 'none'}:mileage-history`,
+    immediate: false,
+    server: false,
+    default: (): VehicleMileageHistory | null => null,
+    transform: r => r.data ?? null
+  })
 
   watch(
-    [() => auth.hydrated.value, () => auth.token.value, () => checklistId.value],
+    [
+      () => auth.hydrated.value,
+      () => auth.token.value,
+      () => checklistId.value
+    ],
     async ([hydrated, token, id]) => {
       if (!hydrated || !id) return
 

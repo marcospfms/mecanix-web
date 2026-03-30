@@ -608,10 +608,16 @@ const handleRefresh = async () => {
                   Checklist de origem
                 </p>
                 <NuxtLink
-                  :to="{ name: 'checklists-checklistId', params: { checklistId: item.checklist.id } }"
+                  :to="{
+                    name: 'checklists-checklistId',
+                    params: { checklistId: item.checklist.id }
+                  }"
                   class="flex items-center gap-2 text-sm text-toned hover:text-highlighted transition-colors"
                 >
-                  <UIcon name="i-lucide-clipboard-check" class="size-4 shrink-0" />
+                  <UIcon
+                    name="i-lucide-clipboard-check"
+                    class="size-4 shrink-0"
+                  />
                   <span>{{ item.checklist.name }}</span>
                   <UBadge
                     :color="item.checklist.is_completed ? 'success' : 'warning'"
@@ -619,7 +625,9 @@ const handleRefresh = async () => {
                     size="sm"
                     class="ml-auto"
                   >
-                    {{ item.checklist.is_completed ? 'Concluído' : 'Em andamento' }}
+                    {{
+                      item.checklist.is_completed ? 'Concluído' : 'Em andamento'
+                    }}
                   </UBadge>
                 </NuxtLink>
                 <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-toned">
@@ -627,11 +635,17 @@ const handleRefresh = async () => {
                     v-if="item.checklist.executed_by"
                     class="flex items-center gap-1"
                   >
-                    <UIcon name="i-lucide-user" class="size-3" />
+                    <UIcon
+                      name="i-lucide-user"
+                      class="size-3"
+                    />
                     {{ item.checklist.executed_by.name }}
                   </span>
                   <span class="flex items-center gap-1">
-                    <UIcon name="i-lucide-calendar" class="size-3" />
+                    <UIcon
+                      name="i-lucide-calendar"
+                      class="size-3"
+                    />
                     <NuxtTime
                       :datetime="item.checklist.created_at"
                       year="numeric"

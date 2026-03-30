@@ -142,13 +142,16 @@ export function useCompanies() {
         body: formData
       })
     } else {
-      const response = await useApiFetch<ApiEnvelope<Company>>(`/companies/${id}`, {
-        method: 'PUT',
-        body: {
-          name: payload.name.trim(),
-          cnpj: normalizeCnpj(payload.cnpj)
+      const response = await useApiFetch<ApiEnvelope<Company>>(
+        `/companies/${id}`,
+        {
+          method: 'PUT',
+          body: {
+            name: payload.name.trim(),
+            cnpj: normalizeCnpj(payload.cnpj)
+          }
         }
-      })
+      )
 
       setCompanies(
         companiesResolved.value.map(company =>

@@ -20,12 +20,7 @@ const templateSelectorSubmitting = ref(false)
 const selectedTemplateId = ref<number | undefined>()
 
 const { data: vehicle, status: vehicleStatus } = useVehicle(vehicleId)
-const {
-  checklists,
-  status,
-  error,
-  refresh
-} = useVehicleChecklists(vehicleId)
+const { checklists, status, error, refresh } = useVehicleChecklists(vehicleId)
 const { templates, status: templatesStatus } = useChecklistTemplates()
 const { createChecklist, deleteChecklist } = useChecklistActions()
 

@@ -36,7 +36,10 @@ const validateInfo = () => {
   if (!infoName.value.trim()) {
     errors.name = 'Informe o seu nome.'
   }
-  if (infoEmail.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(infoEmail.value.trim())) {
+  if (
+    infoEmail.value.trim()
+    && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(infoEmail.value.trim())
+  ) {
     errors.email = 'Informe um e-mail válido.'
   }
   infoErrors.value = errors
@@ -48,15 +51,16 @@ const handleSaveInfo = async () => {
   infoSubmitting.value = true
   try {
     await updateInfo(infoName.value, infoEmail.value)
-    toast.success({ title: 'Dados atualizados', description: 'Seu perfil foi salvo com sucesso.' })
-  }
-  catch (err: unknown) {
+    toast.success({
+      title: 'Dados atualizados',
+      description: 'Seu perfil foi salvo com sucesso.'
+    })
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao salvar',
       description: getErrorMessage(err, 'Não foi possível atualizar os dados.')
     })
-  }
-  finally {
+  } finally {
     infoSubmitting.value = false
   }
 }
@@ -69,8 +73,7 @@ const handleLogout = async () => {
   logoutLoading.value = true
   try {
     await auth.logout()
-  }
-  finally {
+  } finally {
     logoutLoading.value = false
   }
 }
@@ -97,7 +100,7 @@ const usageRows = [
   { key: 'customers' as const, label: 'Clientes' },
   { key: 'vehicles' as const, label: 'Veículos' },
   { key: 'checklist_templates' as const, label: 'Modelos de checklist' },
-  { key: 'checklists_per_month' as const, label: 'Checklists no mês' },
+  { key: 'checklists_per_month' as const, label: 'Checklists no mês' }
 ]
 </script>
 
@@ -118,8 +121,12 @@ const usageRows = [
         <!-- Resumo do perfil -->
         <UCard class="rounded-2xl border-default">
           <div class="flex items-center gap-4">
-            <div class="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]">
-              <span class="text-xl font-semibold uppercase tracking-[0.06em] text-primary">
+            <div
+              class="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
+            >
+              <span
+                class="text-xl font-semibold uppercase tracking-[0.06em] text-primary"
+              >
                 {{ userInitials }}
               </span>
             </div>
@@ -138,8 +145,13 @@ const usageRows = [
         <UCard class="rounded-2xl border-default">
           <div class="space-y-5">
             <div class="flex items-center gap-3">
-              <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <UIcon name="i-lucide-user" class="size-4 text-primary" />
+              <div
+                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+              >
+                <UIcon
+                  name="i-lucide-user"
+                  class="size-4 text-primary"
+                />
               </div>
               <h2 class="text-base font-semibold text-highlighted">
                 Dados pessoais
@@ -148,7 +160,9 @@ const usageRows = [
 
             <div class="space-y-4">
               <div class="space-y-2">
-                <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                <label
+                  class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                >
                   Nome
                 </label>
                 <UInput
@@ -159,13 +173,18 @@ const usageRows = [
                   :maxlength="255"
                   @update:model-value="infoErrors.name = undefined"
                 />
-                <p v-if="infoErrors.name" class="text-sm text-error">
+                <p
+                  v-if="infoErrors.name"
+                  class="text-sm text-error"
+                >
                   {{ infoErrors.name }}
                 </p>
               </div>
 
               <div class="space-y-2">
-                <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                <label
+                  class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                >
                   E-mail
                 </label>
                 <UInput
@@ -177,7 +196,10 @@ const usageRows = [
                   :maxlength="255"
                   @update:model-value="infoErrors.email = undefined"
                 />
-                <p v-if="infoErrors.email" class="text-sm text-error">
+                <p
+                  v-if="infoErrors.email"
+                  class="text-sm text-error"
+                >
                   {{ infoErrors.email }}
                 </p>
               </div>
@@ -200,8 +222,13 @@ const usageRows = [
         <UCard class="rounded-2xl border-default">
           <div class="space-y-4">
             <div class="flex items-center gap-3">
-              <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <UIcon name="i-lucide-palette" class="size-4 text-primary" />
+              <div
+                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+              >
+                <UIcon
+                  name="i-lucide-palette"
+                  class="size-4 text-primary"
+                />
               </div>
               <h2 class="text-base font-semibold text-highlighted">
                 Aparência
@@ -214,12 +241,17 @@ const usageRows = [
                 :key="opt.value"
                 type="button"
                 class="flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-sm font-medium transition-colors"
-                :class="colorMode.preference === opt.value
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-default bg-muted/20 text-toned hover:border-primary/40 hover:text-highlighted'"
+                :class="
+                  colorMode.preference === opt.value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-default bg-muted/20 text-toned hover:border-primary/40 hover:text-highlighted'
+                "
                 @click="colorMode.preference = opt.value"
               >
-                <UIcon :name="opt.icon" class="size-5" />
+                <UIcon
+                  :name="opt.icon"
+                  class="size-5"
+                />
                 {{ opt.label }}
               </button>
             </div>
@@ -230,20 +262,34 @@ const usageRows = [
         <UCard class="rounded-2xl border-default">
           <div class="space-y-5">
             <div class="flex items-center gap-3">
-              <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <UIcon name="i-lucide-crown" class="size-4 text-primary" />
+              <div
+                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+              >
+                <UIcon
+                  name="i-lucide-crown"
+                  class="size-4 text-primary"
+                />
               </div>
               <h2 class="text-base font-semibold text-highlighted">
                 Assinatura
               </h2>
             </div>
 
-            <div v-if="subscriptionStatus === 'pending' && !subscriptionData" class="flex items-center gap-2 text-sm text-toned">
-              <UIcon name="i-lucide-loader" class="size-4 animate-spin" />
+            <div
+              v-if="subscriptionStatus === 'pending' && !subscriptionData"
+              class="flex items-center gap-2 text-sm text-toned"
+            >
+              <UIcon
+                name="i-lucide-loader"
+                class="size-4 animate-spin"
+              />
               <span>Carregando assinatura…</span>
             </div>
 
-            <div v-else-if="!subscriptionData" class="text-sm text-toned">
+            <div
+              v-else-if="!subscriptionData"
+              class="text-sm text-toned"
+            >
               Nenhuma assinatura ativa encontrada.
             </div>
 
@@ -253,11 +299,19 @@ const usageRows = [
                   {{ subscriptionData.subscription.plan_name }}
                 </p>
                 <UBadge
-                  :color="subscriptionStatusColor(subscriptionData.subscription.status)"
+                  :color="
+                    subscriptionStatusColor(
+                      subscriptionData.subscription.status
+                    )
+                  "
                   variant="soft"
                   size="sm"
                 >
-                  {{ subscriptionStatusLabel(subscriptionData.subscription.status) }}
+                  {{
+                    subscriptionStatusLabel(
+                      subscriptionData.subscription.status
+                    )
+                  }}
                 </UBadge>
                 <UBadge
                   v-if="subscriptionData.subscription.auto_renews"
@@ -272,7 +326,9 @@ const usageRows = [
 
               <div class="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                  <p
+                    class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                  >
                     Início
                   </p>
                   <p class="mt-1 text-sm text-highlighted">
@@ -284,13 +340,27 @@ const usageRows = [
                     />
                   </p>
                 </div>
-                <div v-if="subscriptionData.subscription.renews_at || subscriptionData.subscription.ends_at">
-                  <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                    {{ subscriptionData.subscription.renews_at ? 'Próxima renovação' : 'Expira em' }}
+                <div
+                  v-if="
+                    subscriptionData.subscription.renews_at
+                      || subscriptionData.subscription.ends_at
+                  "
+                >
+                  <p
+                    class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                  >
+                    {{
+                      subscriptionData.subscription.renews_at
+                        ? 'Próxima renovação'
+                        : 'Expira em'
+                    }}
                   </p>
                   <p class="mt-1 text-sm text-highlighted">
                     <NuxtTime
-                      :datetime="(subscriptionData.subscription.renews_at ?? subscriptionData.subscription.ends_at)!"
+                      :datetime="
+                        (subscriptionData.subscription.renews_at
+                          ?? subscriptionData.subscription.ends_at)!
+                      "
                       year="numeric"
                       month="2-digit"
                       day="2-digit"
@@ -300,8 +370,13 @@ const usageRows = [
               </div>
 
               <div class="space-y-3">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                  Uso em {{ subscriptionData.period.month.toString().padStart(2, '0') }}/{{ subscriptionData.period.year }}
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                >
+                  Uso em
+                  {{
+                    subscriptionData.period.month.toString().padStart(2, '0')
+                  }}/{{ subscriptionData.period.year }}
                 </p>
                 <div class="space-y-2">
                   <div
@@ -323,7 +398,11 @@ const usageRows = [
                         />
                       </div>
                       <p class="shrink-0 text-sm font-medium text-highlighted">
-                        {{ subscriptionData.usage[row.key].is_unlimited ? '∞' : `${subscriptionData.usage[row.key].used} / ${subscriptionData.usage[row.key].limit}` }}
+                        {{
+                          subscriptionData.usage[row.key].is_unlimited
+                            ? '∞'
+                            : `${subscriptionData.usage[row.key].used} / ${subscriptionData.usage[row.key].limit}`
+                        }}
                       </p>
                     </div>
                   </div>
@@ -365,7 +444,10 @@ const usageRows = [
       </div>
 
       <template #fallback>
-        <AppLoading title="Carregando perfil" description="Aguarde um instante." />
+        <AppLoading
+          title="Carregando perfil"
+          description="Aguarde um instante."
+        />
       </template>
     </ClientOnly>
 

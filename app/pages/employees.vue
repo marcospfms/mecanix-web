@@ -5,9 +5,14 @@ import {
   permissionModules,
   permissionActions,
   getPermissionPreset,
-  detectRoleFromPermissions,
+  detectRoleFromPermissions
 } from '../composables/useEmployees'
-import type { Employee, EmployeePermissions, PermissionModuleKey, PermissionActionKey } from '../composables/useEmployees'
+import type {
+  Employee,
+  EmployeePermissions,
+  PermissionModuleKey,
+  PermissionActionKey
+} from '../composables/useEmployees'
 import type { Company } from '../composables/useCompanies'
 
 definePageMeta({
@@ -45,15 +50,20 @@ const formUsername = ref('')
 const formPassword = ref('')
 const formRole = ref<'manager' | 'technician' | 'custom'>('technician')
 const formIsActive = ref(true)
-const formPermissions = ref<EmployeePermissions>(getPermissionPreset('technician'))
+const formPermissions = ref<EmployeePermissions>(
+  getPermissionPreset('technician')
+)
 const formErrors = ref<{
-  company_id?: string
-  name?: string
-  username?: string
-  password?: string
+  company_id?: string;
+  name?: string;
+  username?: string;
+  password?: string;
 }>({})
 
-const togglePermission = (module: PermissionModuleKey, action: PermissionActionKey) => {
+const togglePermission = (
+  module: PermissionModuleKey,
+  action: PermissionActionKey
+) => {
   formPermissions.value[module][action] = !formPermissions.value[module][action]
   formRole.value = detectRoleFromPermissions(formPermissions.value)
 }
@@ -84,7 +94,10 @@ const companiesOptions = computed(() =>
 
 // Agrupa por empresa
 const groupedByCompany = computed(() => {
-  const groups: Record<number, { company: Employee['company'], items: Employee[] }> = {}
+  const groups: Record<
+    number,
+    { company: Employee['company']; items: Employee[] }
+  > = {}
   for (const emp of employees.value) {
     if (!groups[emp.company_id]) {
       groups[emp.company_id] = { company: emp.company, items: [] }
@@ -131,7 +144,12 @@ const openEdit = (emp: Employee) => {
   formUsername.value = emp.user.username ?? ''
   formRole.value = emp.role
   formIsActive.value = emp.is_active
-  formPermissions.value = JSON.parse(JSON.stringify(emp.permissions ?? getPermissionPreset(emp.role === 'custom' ? 'technician' : emp.role)))
+  formPermissions.value = JSON.parse(
+    JSON.stringify(
+      emp.permissions
+      ?? getPermissionPreset(emp.role === 'custom' ? 'technician' : emp.role)
+    )
+  )
   formOpen.value = true
 }
 
@@ -145,9 +163,9 @@ const validateForm = () => {
   }
   if (!formUsername.value.trim()) {
     errors.username = 'Informe o nome de usuário.'
-  }
-  else if (!/^[a-z0-9._-]{3,50}$/.test(formUsername.value.trim())) {
-    errors.username = 'Use apenas letras minúsculas, números, "_", "-" e "." (3–50 caracteres).'
+  } else if (!/^[a-z0-9._-]{3,50}$/.test(formUsername.value.trim())) {
+    errors.username
+      = 'Use apenas letras minúsculas, números, "_", "-" e "." (3–50 caracteres).'
   }
   if (formMode.value === 'create' && !formPassword.value) {
     errors.password = 'Informe a senha temporária.'
@@ -162,7 +180,8 @@ const handleSubmit = async () => {
 
   try {
     if (formMode.value === 'create') {
-      const createRole = formRole.value === 'custom' ? 'technician' : formRole.value
+      const createRole
+        = formRole.value === 'custom' ? 'technician' : formRole.value
       await createEmployee(formCompanyId.value!, {
         name: formName.value,
         username: formUsername.value,
@@ -170,28 +189,38 @@ const handleSubmit = async () => {
         role: createRole,
         permissions: formPermissions.value
       })
-      toast.success({ title: 'Funcionário criado', description: 'O acesso foi gerado com sucesso.' })
-    }
-    else if (editingEmployee.value) {
-      await updateEmployee(editingEmployee.value.company_id, editingEmployee.value.id, {
-        name: formName.value,
-        username: formUsername.value,
-        role: formRole.value,
-        permissions: formPermissions.value,
-        is_active: formIsActive.value
+      toast.success({
+        title: 'Funcionário criado',
+        description: 'O acesso foi gerado com sucesso.'
       })
-      toast.success({ title: 'Funcionário atualizado', description: 'Os dados foram salvos.' })
+    } else if (editingEmployee.value) {
+      await updateEmployee(
+        editingEmployee.value.company_id,
+        editingEmployee.value.id,
+        {
+          name: formName.value,
+          username: formUsername.value,
+          role: formRole.value,
+          permissions: formPermissions.value,
+          is_active: formIsActive.value
+        }
+      )
+      toast.success({
+        title: 'Funcionário atualizado',
+        description: 'Os dados foram salvos.'
+      })
     }
     formOpen.value = false
     resetForm()
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao salvar',
-      description: getErrorMessage(err, 'Não foi possível salvar o funcionário.')
+      description: getErrorMessage(
+        err,
+        'Não foi possível salvar o funcionário.'
+      )
     })
-  }
-  finally {
+  } finally {
     formSubmitting.value = false
   }
 }
@@ -206,18 +235,25 @@ const handleDeactivate = async () => {
   if (!confirmTarget.value) return
   confirmLoading.value = true
   try {
-    await deactivateEmployee(confirmTarget.value.company_id, confirmTarget.value.id)
-    toast.success({ title: 'Funcionário desativado', description: 'O acesso foi revogado.' })
+    await deactivateEmployee(
+      confirmTarget.value.company_id,
+      confirmTarget.value.id
+    )
+    toast.success({
+      title: 'Funcionário desativado',
+      description: 'O acesso foi revogado.'
+    })
     confirmOpen.value = false
     confirmTarget.value = null
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao desativar',
-      description: getErrorMessage(err, 'Não foi possível desativar o funcionário.')
+      description: getErrorMessage(
+        err,
+        'Não foi possível desativar o funcionário.'
+      )
     })
-  }
-  finally {
+  } finally {
     confirmLoading.value = false
   }
 }
@@ -235,8 +271,7 @@ const validateReset = () => {
   const errors: typeof resetErrors.value = {}
   if (!resetNewPassword.value) {
     errors.password = 'Informe a nova senha.'
-  }
-  else if (resetNewPassword.value.length < 6) {
+  } else if (resetNewPassword.value.length < 6) {
     errors.password = 'A senha deve ter ao menos 6 caracteres.'
   }
   if (resetNewPassword.value !== resetConfirmPassword.value) {
@@ -250,18 +285,23 @@ const handleResetPassword = async () => {
   if (!validateReset() || resetSubmitting.value || !resetTarget.value) return
   resetSubmitting.value = true
   try {
-    await resetPassword(resetTarget.value.company_id, resetTarget.value.id, resetNewPassword.value)
-    toast.success({ title: 'Senha redefinida', description: 'O funcionário deverá trocar a senha no próximo acesso.' })
+    await resetPassword(
+      resetTarget.value.company_id,
+      resetTarget.value.id,
+      resetNewPassword.value
+    )
+    toast.success({
+      title: 'Senha redefinida',
+      description: 'O funcionário deverá trocar a senha no próximo acesso.'
+    })
     resetOpen.value = false
     resetTarget.value = null
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao redefinir senha',
       description: getErrorMessage(err, 'Não foi possível redefinir a senha.')
     })
-  }
-  finally {
+  } finally {
     resetSubmitting.value = false
   }
 }
@@ -275,14 +315,12 @@ const handleRefresh = async () => {
       refresh(),
       new Promise(resolve => setTimeout(resolve, 1000))
     ])
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao atualizar',
       description: getErrorMessage(err, 'Não foi possível atualizar a lista.')
     })
-  }
-  finally {
+  } finally {
     manualRefreshing.value = false
   }
 }
@@ -296,13 +334,16 @@ const handleRefresh = async () => {
         Funcionários
       </p>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+      >
         <div class="space-y-2">
           <h1 class="text-3xl font-semibold tracking-tight text-highlighted">
             Equipe
           </h1>
           <p class="max-w-2xl text-sm leading-6 text-toned">
-            Gerencie os funcionários das suas empresas, controle cargos e acessos.
+            Gerencie os funcionários das suas empresas, controle cargos e
+            acessos.
           </p>
         </div>
 
@@ -327,7 +368,10 @@ const handleRefresh = async () => {
           size="xl"
           class="flex-1"
         >
-          <template v-if="search" #trailing>
+          <template
+            v-if="search"
+            #trailing
+          >
             <UButton
               color="neutral"
               variant="link"
@@ -373,7 +417,11 @@ const handleRefresh = async () => {
         icon="i-lucide-user-round-cog"
       >
         <div class="pt-2">
-          <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
+          <UButton
+            color="primary"
+            icon="i-lucide-plus"
+            @click="openCreate"
+          >
             Criar primeiro funcionário
           </UButton>
         </div>
@@ -388,13 +436,20 @@ const handleRefresh = async () => {
         >
           <!-- Label da empresa -->
           <div class="flex items-center gap-3">
-            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <UIcon name="i-lucide-building-2" class="size-4 text-primary" />
+            <div
+              class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+            >
+              <UIcon
+                name="i-lucide-building-2"
+                class="size-4 text-primary"
+              />
             </div>
             <h2 class="text-base font-semibold text-highlighted">
               {{ group.company.name }}
             </h2>
-            <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-toned">
+            <span
+              class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-toned"
+            >
               {{ group.items.length }}
             </span>
           </div>
@@ -408,8 +463,12 @@ const handleRefresh = async () => {
               <div class="flex flex-col gap-3">
                 <!-- Avatar + info -->
                 <div class="flex min-w-0 items-start gap-4">
-                  <div class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]">
-                    <span class="text-sm font-semibold uppercase tracking-[0.08em] text-primary">
+                  <div
+                    class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
+                  >
+                    <span
+                      class="text-sm font-semibold uppercase tracking-[0.08em] text-primary"
+                    >
                       {{ emp.user.name.slice(0, 2) }}
                     </span>
                   </div>
@@ -422,18 +481,22 @@ const handleRefresh = async () => {
                       <!-- Role badge -->
                       <span
                         class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
-                        :class="emp.role === 'manager'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-muted text-toned'"
+                        :class="
+                          emp.role === 'manager'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted text-toned'
+                        "
                       >
                         {{ roleLabel(emp.role) }}
                       </span>
                       <!-- Active badge -->
                       <span
                         class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
-                        :class="emp.is_active
-                          ? 'bg-success/10 text-success'
-                          : 'bg-error/10 text-error'"
+                        :class="
+                          emp.is_active
+                            ? 'bg-success/10 text-success'
+                            : 'bg-error/10 text-error'
+                        "
                       >
                         {{ emp.is_active ? 'Ativo' : 'Inativo' }}
                       </span>
@@ -447,14 +510,19 @@ const handleRefresh = async () => {
                       v-if="emp.user.must_change_password"
                       class="flex items-center gap-1.5 text-xs text-warning"
                     >
-                      <UIcon name="i-lucide-alert-triangle" class="size-3.5" />
+                      <UIcon
+                        name="i-lucide-alert-triangle"
+                        class="size-3.5"
+                      />
                       Troca de senha pendente
                     </p>
                   </div>
                 </div>
 
                 <!-- Ações -->
-                <div class="flex flex-wrap gap-2 border-t border-default/70 pt-3">
+                <div
+                  class="flex flex-wrap gap-2 border-t border-default/70 pt-3"
+                >
                   <UButton
                     color="neutral"
                     variant="soft"
@@ -505,8 +573,13 @@ const handleRefresh = async () => {
       <template #body>
         <div class="space-y-5">
           <!-- Empresa (só no create) -->
-          <div v-if="formMode === 'create'" class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+          <div
+            v-if="formMode === 'create'"
+            class="space-y-2"
+          >
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Empresa
             </label>
             <AppLoading
@@ -522,14 +595,19 @@ const handleRefresh = async () => {
               size="xl"
               class="w-full"
             />
-            <p v-if="formErrors.company_id" class="text-sm text-error">
+            <p
+              v-if="formErrors.company_id"
+              class="text-sm text-error"
+            >
               {{ formErrors.company_id }}
             </p>
           </div>
 
           <!-- Nome -->
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Nome
             </label>
             <UInput
@@ -540,14 +618,19 @@ const handleRefresh = async () => {
               :maxlength="255"
               @update:model-value="formErrors.name = undefined"
             />
-            <p v-if="formErrors.name" class="text-sm text-error">
+            <p
+              v-if="formErrors.name"
+              class="text-sm text-error"
+            >
               {{ formErrors.name }}
             </p>
           </div>
 
           <!-- Username -->
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Usuário
             </label>
             <UInput
@@ -559,16 +642,25 @@ const handleRefresh = async () => {
               @update:model-value="formErrors.username = undefined"
             />
             <p class="text-xs text-toned">
-              Letras minúsculas, números, ponto, hífen ou underscore (3–50 caracteres).
+              Letras minúsculas, números, ponto, hífen ou underscore (3–50
+              caracteres).
             </p>
-            <p v-if="formErrors.username" class="text-sm text-error">
+            <p
+              v-if="formErrors.username"
+              class="text-sm text-error"
+            >
               {{ formErrors.username }}
             </p>
           </div>
 
           <!-- Senha temporária (só no create) -->
-          <div v-if="formMode === 'create'" class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+          <div
+            v-if="formMode === 'create'"
+            class="space-y-2"
+          >
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Senha temporária
             </label>
             <UInput
@@ -582,15 +674,22 @@ const handleRefresh = async () => {
             <p class="text-xs text-toned">
               O funcionário será obrigado a trocar no primeiro acesso.
             </p>
-            <p v-if="formErrors.password" class="text-sm text-error">
+            <p
+              v-if="formErrors.password"
+              class="text-sm text-error"
+            >
               {{ formErrors.password }}
             </p>
           </div>
 
           <!-- Cargo -->
-          <div class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4">
+          <div
+            class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4"
+          >
             <div class="flex items-center justify-between">
-              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              <label
+                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >
                 Cargo
               </label>
               <span
@@ -600,7 +699,9 @@ const handleRefresh = async () => {
                 Personalizado
               </span>
             </div>
-            <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
+            <label
+              class="flex cursor-pointer items-center gap-3 text-sm text-highlighted"
+            >
               <input
                 v-model="formRole"
                 type="radio"
@@ -610,10 +711,14 @@ const handleRefresh = async () => {
               >
               <div>
                 <p class="font-medium">Técnico</p>
-                <p class="text-xs text-toned">Executa checklists, sem acesso a configurações.</p>
+                <p class="text-xs text-toned">
+                  Executa checklists, sem acesso a configurações.
+                </p>
               </div>
             </label>
-            <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
+            <label
+              class="flex cursor-pointer items-center gap-3 text-sm text-highlighted"
+            >
               <input
                 v-model="formRole"
                 type="radio"
@@ -623,7 +728,9 @@ const handleRefresh = async () => {
               >
               <div>
                 <p class="font-medium">Gerente</p>
-                <p class="text-xs text-toned">Acesso expandido à operação da loja.</p>
+                <p class="text-xs text-toned">
+                  Acesso expandido à operação da loja.
+                </p>
               </div>
             </label>
           </div>
@@ -631,11 +738,14 @@ const handleRefresh = async () => {
           <!-- Permissões -->
           <div class="space-y-3">
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              <label
+                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >
                 Permissões
               </label>
               <p class="mt-1 text-xs text-toned">
-                Ajuste individualmente o que este funcionário pode fazer em cada módulo.
+                Ajuste individualmente o que este funcionário pode fazer em cada
+                módulo.
               </p>
             </div>
 
@@ -660,7 +770,9 @@ const handleRefresh = async () => {
                     :key="action.key"
                     class="flex items-center justify-between border-t border-default py-2.5"
                   >
-                    <span class="text-sm font-medium text-highlighted">{{ action.label }}</span>
+                    <span class="text-sm font-medium text-highlighted">{{
+                      action.label
+                    }}</span>
                     <input
                       type="checkbox"
                       :checked="formPermissions[mod.key][action.key]"
@@ -679,7 +791,9 @@ const handleRefresh = async () => {
             class="flex items-center justify-between rounded-2xl border border-default bg-muted/20 px-4 py-3"
           >
             <div>
-              <p class="text-sm font-medium text-highlighted">Status</p>
+              <p class="text-sm font-medium text-highlighted">
+                Status
+              </p>
               <p class="text-xs text-toned">
                 {{ formIsActive ? 'Funcionário ativo' : 'Acesso revogado' }}
               </p>
@@ -694,10 +808,18 @@ const handleRefresh = async () => {
       </template>
 
       <template #footer="{ close }">
-        <UButton color="neutral" variant="soft" @click="close()">
+        <UButton
+          color="neutral"
+          variant="soft"
+          @click="close()"
+        >
           Cancelar
         </UButton>
-        <UButton color="primary" :loading="formSubmitting" @click="handleSubmit">
+        <UButton
+          color="primary"
+          :loading="formSubmitting"
+          @click="handleSubmit"
+        >
           {{ formMode === 'create' ? 'Criar funcionário' : 'Salvar' }}
         </UButton>
       </template>
@@ -707,13 +829,17 @@ const handleRefresh = async () => {
     <UModal
       v-model:open="resetOpen"
       title="Redefinir senha"
-      :description="resetTarget ? `Definir nova senha para ${resetTarget.user.name}` : ''"
+      :description="
+        resetTarget ? `Definir nova senha para ${resetTarget.user.name}` : ''
+      "
       :close="false"
     >
       <template #content>
         <div class="space-y-5 p-6">
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Nova senha
             </label>
             <UInput
@@ -724,13 +850,18 @@ const handleRefresh = async () => {
               class="w-full"
               @update:model-value="resetErrors.password = undefined"
             />
-            <p v-if="resetErrors.password" class="text-sm text-error">
+            <p
+              v-if="resetErrors.password"
+              class="text-sm text-error"
+            >
               {{ resetErrors.password }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Confirmar senha
             </label>
             <UInput
@@ -741,20 +872,32 @@ const handleRefresh = async () => {
               class="w-full"
               @update:model-value="resetErrors.confirm = undefined"
             />
-            <p v-if="resetErrors.confirm" class="text-sm text-error">
+            <p
+              v-if="resetErrors.confirm"
+              class="text-sm text-error"
+            >
               {{ resetErrors.confirm }}
             </p>
           </div>
 
           <p class="text-xs text-toned">
-            Todos os tokens ativos do funcionário serão revogados e ele precisará trocar a senha no próximo acesso.
+            Todos os tokens ativos do funcionário serão revogados e ele
+            precisará trocar a senha no próximo acesso.
           </p>
 
           <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <UButton color="neutral" variant="soft" @click="resetOpen = false">
+            <UButton
+              color="neutral"
+              variant="soft"
+              @click="resetOpen = false"
+            >
               Cancelar
             </UButton>
-            <UButton color="primary" :loading="resetSubmitting" @click="handleResetPassword">
+            <UButton
+              color="primary"
+              :loading="resetSubmitting"
+              @click="handleResetPassword"
+            >
               Redefinir senha
             </UButton>
           </div>
@@ -766,9 +909,11 @@ const handleRefresh = async () => {
     <AppConfirm
       v-model:open="confirmOpen"
       title="Desativar funcionário"
-      :description="confirmTarget
-        ? `Você está revogando o acesso de ${confirmTarget.user.name}. Todos os tokens ativos serão invalidados.`
-        : 'Esta ação não pode ser desfeita facilmente.'"
+      :description="
+        confirmTarget
+          ? `Você está revogando o acesso de ${confirmTarget.user.name}. Todos os tokens ativos serão invalidados.`
+          : 'Esta ação não pode ser desfeita facilmente.'
+      "
       confirm-label="Desativar"
       :loading="confirmLoading"
       @confirm="handleDeactivate"

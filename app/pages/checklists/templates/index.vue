@@ -119,9 +119,10 @@ const handleSubmit = async () => {
     if (formMode.value === 'create') {
       const created = await createTemplate({
         name: name.value,
-        vehicle_type_id: vehicleTypeValue.value === ALL_VEHICLE_TYPES
-          ? null
-          : Number(vehicleTypeValue.value)
+        vehicle_type_id:
+          vehicleTypeValue.value === ALL_VEHICLE_TYPES
+            ? null
+            : Number(vehicleTypeValue.value)
       })
 
       toast.success({
@@ -142,9 +143,10 @@ const handleSubmit = async () => {
     if (editingTemplate.value) {
       await updateTemplate(editingTemplate.value.id, {
         name: name.value,
-        vehicle_type_id: vehicleTypeValue.value === ALL_VEHICLE_TYPES
-          ? null
-          : Number(vehicleTypeValue.value)
+        vehicle_type_id:
+          vehicleTypeValue.value === ALL_VEHICLE_TYPES
+            ? null
+            : Number(vehicleTypeValue.value)
       })
 
       toast.success({

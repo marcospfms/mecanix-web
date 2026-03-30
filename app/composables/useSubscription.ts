@@ -57,12 +57,18 @@ type ApiEnvelope<T> = {
   data: T;
 }
 
-export function subscriptionStatusLabel(status: Subscription['status']): string {
+export function subscriptionStatusLabel(
+  status: Subscription['status']
+): string {
   switch (status) {
-    case 'active': return 'Ativo'
-    case 'expired': return 'Expirado'
-    case 'canceled': return 'Cancelado'
-    case 'pending': return 'Pendente'
+    case 'active':
+      return 'Ativo'
+    case 'expired':
+      return 'Expirado'
+    case 'canceled':
+      return 'Cancelado'
+    case 'pending':
+      return 'Pendente'
   }
 }
 
@@ -70,10 +76,14 @@ export function subscriptionStatusColor(
   status: Subscription['status']
 ): 'success' | 'error' | 'neutral' | 'warning' {
   switch (status) {
-    case 'active': return 'success'
-    case 'expired': return 'error'
-    case 'canceled': return 'neutral'
-    case 'pending': return 'warning'
+    case 'active':
+      return 'success'
+    case 'expired':
+      return 'error'
+    case 'canceled':
+      return 'neutral'
+    case 'pending':
+      return 'warning'
   }
 }
 

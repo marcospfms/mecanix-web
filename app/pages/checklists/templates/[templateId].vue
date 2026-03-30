@@ -71,21 +71,26 @@ const handleTemplateUpdate = async () => {
   try {
     await updateTemplate(template.value!.id, {
       name: templateFormName.value,
-      vehicle_type_id: templateFormVehicleType.value === ALL_VEHICLE_TYPES
-        ? null
-        : Number(templateFormVehicleType.value)
+      vehicle_type_id:
+        templateFormVehicleType.value === ALL_VEHICLE_TYPES
+          ? null
+          : Number(templateFormVehicleType.value)
     })
-    toast.success({ title: 'Template atualizado', description: 'Os dados foram salvos com sucesso.' })
+    toast.success({
+      title: 'Template atualizado',
+      description: 'Os dados foram salvos com sucesso.'
+    })
     templateFormOpen.value = false
     await refresh()
-  }
-  catch (err: unknown) {
+  } catch (err: unknown) {
     toast.error({
       title: 'Falha ao salvar',
-      description: getErrorMessage(err, 'Não foi possível atualizar o template.')
+      description: getErrorMessage(
+        err,
+        'Não foi possível atualizar o template.'
+      )
     })
-  }
-  finally {
+  } finally {
     templateFormSubmitting.value = false
   }
 }
@@ -118,8 +123,8 @@ const isLoading = computed(
     ['idle', 'pending'].includes(status.value)
     || (['idle', 'pending'].includes(itemsStatus.value) && !template.value)
 )
-const isItemsLoading = computed(
-  () => ['idle', 'pending'].includes(itemsStatus.value)
+const isItemsLoading = computed(() =>
+  ['idle', 'pending'].includes(itemsStatus.value)
 )
 const isDataRefreshing = computed(
   () => manualRefreshing.value && !!template.value
@@ -347,9 +352,13 @@ const draggedIndex = ref(-1)
 const dragOverIndex = ref(-1)
 const isReordering = ref(false)
 
-watch(() => items.value, (newItems) => {
-  localItems.value = [...(newItems ?? [])]
-}, { immediate: true })
+watch(
+  () => items.value,
+  (newItems) => {
+    localItems.value = [...(newItems ?? [])]
+  },
+  { immediate: true }
+)
 
 const onDragStart = (index: number) => {
   draggedIndex.value = index
@@ -402,13 +411,18 @@ const onDrop = async (dropIndex: number) => {
         Templates de checklist
       </p>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+      >
         <div class="space-y-1.5">
           <NuxtLink
             :to="{ name: 'checklists-templates' }"
             class="inline-flex items-center gap-1.5 text-sm text-toned transition-colors hover:text-highlighted"
           >
-            <UIcon name="i-lucide-arrow-left" class="size-4" />
+            <UIcon
+              name="i-lucide-arrow-left"
+              class="size-4"
+            />
             Templates
           </NuxtLink>
           <h1 class="text-3xl font-semibold tracking-tight text-highlighted">
@@ -453,10 +467,17 @@ const onDrop = async (dropIndex: number) => {
       <UCard class="rounded-2xl border-default">
         <div class="space-y-5">
           <!-- Header do card -->
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div
+            class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+          >
             <div class="flex items-center gap-3">
-              <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <UIcon name="i-lucide-clipboard-list" class="size-5 text-primary" />
+              <div
+                class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+              >
+                <UIcon
+                  name="i-lucide-clipboard-list"
+                  class="size-5 text-primary"
+                />
               </div>
               <div>
                 <p class="text-base font-semibold text-highlighted">
@@ -499,9 +520,13 @@ const onDrop = async (dropIndex: number) => {
           </div>
 
           <!-- Info blocks (padrão infoRow/infoBlock do app mobile) -->
-          <div class="grid gap-3 rounded-xl border border-default bg-muted/20 p-4 sm:grid-cols-3">
+          <div
+            class="grid gap-3 rounded-xl border border-default bg-muted/20 p-4 sm:grid-cols-3"
+          >
             <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Tipo de veículo
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
@@ -509,7 +534,9 @@ const onDrop = async (dropIndex: number) => {
               </p>
             </div>
             <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Itens
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
@@ -517,7 +544,9 @@ const onDrop = async (dropIndex: number) => {
               </p>
             </div>
             <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Atualizado
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
@@ -547,8 +576,14 @@ const onDrop = async (dropIndex: number) => {
         </div>
 
         <!-- Carregando itens (template já visível) -->
-        <div v-if="isItemsLoading" class="flex items-center gap-2 py-6 text-sm text-toned">
-          <UIcon name="i-lucide-loader" class="size-4 animate-spin" />
+        <div
+          v-if="isItemsLoading"
+          class="flex items-center gap-2 py-6 text-sm text-toned"
+        >
+          <UIcon
+            name="i-lucide-loader"
+            class="size-4 animate-spin"
+          />
           <span>Carregando itens…</span>
         </div>
 
@@ -560,124 +595,146 @@ const onDrop = async (dropIndex: number) => {
             icon="i-lucide-list-checks"
           >
             <div class="pt-2">
-              <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
+              <UButton
+                color="primary"
+                icon="i-lucide-plus"
+                @click="openCreate"
+              >
                 Criar primeiro item
               </UButton>
             </div>
           </AppEmpty>
 
-          <div v-else class="grid gap-3">
-          <p class="flex items-center gap-1 text-xs text-toned">
-            <UIcon name="i-lucide-grip-vertical" class="size-3.5" />
-            Arraste os itens para reordenar
-          </p>
-          <UCard
-            v-for="(item, index) in localItems"
-            :key="item.id"
-            draggable="true"
-            :class="[
-              'rounded-2xl cursor-grab active:cursor-grabbing transition-all',
-              draggedIndex === index ? 'opacity-40 scale-95 border-default' : '',
-              dragOverIndex === index && draggedIndex !== index ? 'ring-2 ring-primary ring-offset-2' : 'border-default'
-            ]"
-            @dragstart="onDragStart(index)"
-            @dragover.prevent="onDragOver(index)"
-            @drop.prevent="onDrop(index)"
-            @dragend="onDragEnd"
+          <div
+            v-else
+            class="grid gap-3"
           >
-            <div class="space-y-3">
-              <!-- Linha principal: nome, ações -->
-              <div class="flex items-start gap-3">
-                <!-- Alça de arrasto -->
-                <div class="flex items-center gap-1.5">
-                  <UIcon name="i-lucide-grip-vertical" class="size-4 shrink-0 text-muted" />
-                </div>
+            <p class="flex items-center gap-1 text-xs text-toned">
+              <UIcon
+                name="i-lucide-grip-vertical"
+                class="size-3.5"
+              />
+              Arraste os itens para reordenar
+            </p>
+            <UCard
+              v-for="(item, index) in localItems"
+              :key="item.id"
+              draggable="true"
+              :class="[
+                'rounded-2xl cursor-grab active:cursor-grabbing transition-all',
+                draggedIndex === index
+                  ? 'opacity-40 scale-95 border-default'
+                  : '',
+                dragOverIndex === index && draggedIndex !== index
+                  ? 'ring-2 ring-primary ring-offset-2'
+                  : 'border-default'
+              ]"
+              @dragstart="onDragStart(index)"
+              @dragover.prevent="onDragOver(index)"
+              @drop.prevent="onDrop(index)"
+              @dragend="onDragEnd"
+            >
+              <div class="space-y-3">
+                <!-- Linha principal: nome, ações -->
+                <div class="flex items-start gap-3">
+                  <!-- Alça de arrasto -->
+                  <div class="flex items-center gap-1.5">
+                    <UIcon
+                      name="i-lucide-grip-vertical"
+                      class="size-4 shrink-0 text-muted"
+                    />
+                  </div>
 
-                <!-- Conteúdo -->
-                <div class="min-w-0 flex-1 space-y-1">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <p class="text-sm font-semibold text-highlighted">
-                      {{ item.name }}
+                  <!-- Conteúdo -->
+                  <div class="min-w-0 flex-1 space-y-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <p class="text-sm font-semibold text-highlighted">
+                        {{ item.name }}
+                      </p>
+                    </div>
+                    <p
+                      v-if="item.description"
+                      class="text-sm leading-5 text-toned"
+                    >
+                      {{ item.description }}
                     </p>
-                  </div>
-                  <p v-if="item.description" class="text-sm leading-5 text-toned">
-                    {{ item.description }}
-                  </p>
 
-                  <!-- Tags de comportamento -->
-                  <div class="flex flex-wrap gap-1.5 pt-0.5">
-                    <span
-                      v-if="item.is_completable"
-                      class="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary"
-                    >
-                      Completável
-                    </span>
-                    <span
-                      v-if="item.allows_multiple_responses"
-                      class="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-warning"
-                    >
-                      Múltipla escolha
-                    </span>
+                    <!-- Tags de comportamento -->
+                    <div class="flex flex-wrap gap-1.5 pt-0.5">
+                      <span
+                        v-if="item.is_completable"
+                        class="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary"
+                      >
+                        Completável
+                      </span>
+                      <span
+                        v-if="item.allows_multiple_responses"
+                        class="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-warning"
+                      >
+                        Múltipla escolha
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Ações -->
+                  <div class="flex shrink-0 gap-1.5">
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-eye"
+                      size="sm"
+                      aria-label="Visualizar item"
+                      @click="openPreview(item)"
+                    />
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-pencil"
+                      size="sm"
+                      aria-label="Editar item"
+                      @click="openEdit(item)"
+                    />
+                    <UButton
+                      color="error"
+                      variant="ghost"
+                      icon="i-lucide-trash"
+                      size="sm"
+                      aria-label="Excluir item"
+                      @click="askItemDelete(item)"
+                    />
                   </div>
                 </div>
 
-                <!-- Ações -->
-                <div class="flex shrink-0 gap-1.5">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-lucide-eye"
-                    size="sm"
-                    aria-label="Visualizar item"
-                    @click="openPreview(item)"
-                  />
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-lucide-pencil"
-                    size="sm"
-                    aria-label="Editar item"
-                    @click="openEdit(item)"
-                  />
-                  <UButton
-                    color="error"
-                    variant="ghost"
-                    icon="i-lucide-trash"
-                    size="sm"
-                    aria-label="Excluir item"
-                    @click="askItemDelete(item)"
-                  />
-                </div>
-              </div>
-
-              <!-- Opções de resposta -->
-              <div
-                class="rounded-xl border border-default bg-muted/20 px-3 py-2.5"
-              >
-                <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
-                  Opções
-                </p>
+                <!-- Opções de resposta -->
                 <div
-                  v-if="(item.options?.length ?? 0) > 0"
-                  class="flex flex-wrap gap-1.5"
+                  class="rounded-xl border border-default bg-muted/20 px-3 py-2.5"
                 >
-                  <span
-                    v-for="option in item.options"
-                    :key="option.id"
-                    class="rounded-full border border-default bg-default px-2.5 py-1 text-xs text-toned"
+                  <p
+                    class="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
                   >
-                    {{ option.label }}
-                  </span>
-                </div>
-                <div
-                  v-else
-                  class="rounded-xl border border-dashed border-default bg-default px-3 py-2.5 text-sm text-toned"
-                >
-                  Este item ainda não tem nenhuma opção cadastrada.
+                    Opções
+                  </p>
+                  <div
+                    v-if="(item.options?.length ?? 0) > 0"
+                    class="flex flex-wrap gap-1.5"
+                  >
+                    <span
+                      v-for="option in item.options"
+                      :key="option.id"
+                      class="rounded-full border border-default bg-default px-2.5 py-1 text-xs text-toned"
+                    >
+                      {{ option.label }}
+                    </span>
+                  </div>
+                  <div
+                    v-else
+                    class="rounded-xl border border-dashed border-default bg-default px-3 py-2.5 text-sm text-toned"
+                  >
+                    Este item ainda não tem nenhuma opção cadastrada.
+                  </div>
                 </div>
               </div>
-            </div>
-          </UCard>
+            </UCard>
           </div>
         </template>
       </section>
@@ -712,7 +769,9 @@ const onDrop = async (dropIndex: number) => {
             v-if="previewingItem.description"
             class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
           >
-            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+            <p
+              class="text-xs font-semibold uppercase tracking-[0.22em] text-primary"
+            >
               Descrição
             </p>
             <p class="mt-2 text-sm leading-6 text-toned">
@@ -721,24 +780,36 @@ const onDrop = async (dropIndex: number) => {
           </div>
 
           <div class="grid gap-3 sm:grid-cols-3">
-            <div class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+            <div
+              class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
+            >
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Posição na lista
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
                 {{ previewingItem.order_index }}
               </p>
             </div>
-            <div class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+            <div
+              class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
+            >
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Obrigatório
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
                 {{ previewingItem.is_required ? 'Sim' : 'Não' }}
               </p>
             </div>
-            <div class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+            <div
+              class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
+            >
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Resposta
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
@@ -749,7 +820,9 @@ const onDrop = async (dropIndex: number) => {
 
           <div class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
             <div class="flex items-center justify-between gap-3">
-              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+              <p
+                class="text-xs font-semibold uppercase tracking-[0.22em] text-primary"
+              >
                 Opções
               </p>
               <span class="text-xs text-toned">
@@ -795,7 +868,9 @@ const onDrop = async (dropIndex: number) => {
       <template #body>
         <div class="space-y-4">
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Nome
             </label>
             <UInput
@@ -806,13 +881,18 @@ const onDrop = async (dropIndex: number) => {
               :maxlength="255"
               @update:model-value="templateFormErrors.name = undefined"
             />
-            <p v-if="templateFormErrors.name" class="text-sm text-error">
+            <p
+              v-if="templateFormErrors.name"
+              class="text-sm text-error"
+            >
               {{ templateFormErrors.name }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Tipo de veículo
             </label>
             <USelect
@@ -858,7 +938,9 @@ const onDrop = async (dropIndex: number) => {
       <template #body>
         <div class="space-y-4">
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Nome
             </label>
             <UInput
@@ -868,13 +950,18 @@ const onDrop = async (dropIndex: number) => {
               class="w-full"
               :maxlength="255"
             />
-            <p v-if="itemFormErrors.name" class="text-sm text-error">
+            <p
+              v-if="itemFormErrors.name"
+              class="text-sm text-error"
+            >
               {{ itemFormErrors.name }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Descrição
             </label>
             <UTextarea
@@ -885,12 +972,18 @@ const onDrop = async (dropIndex: number) => {
             />
           </div>
 
-          <div class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+          <div
+            class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4"
+          >
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >
               Comportamento
             </label>
 
-            <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
+            <label
+              class="flex cursor-pointer items-center gap-3 text-sm text-highlighted"
+            >
               <input
                 v-model="isRequired"
                 type="checkbox"
@@ -899,7 +992,9 @@ const onDrop = async (dropIndex: number) => {
               Item obrigatório para concluir o checklist
             </label>
 
-            <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
+            <label
+              class="flex cursor-pointer items-center gap-3 text-sm text-highlighted"
+            >
               <input
                 v-model="allowsMultipleResponses"
                 type="checkbox"
@@ -911,7 +1006,9 @@ const onDrop = async (dropIndex: number) => {
 
           <div class="space-y-3">
             <div class="flex items-center justify-between gap-3">
-              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              <label
+                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >
                 Opções de resposta
               </label>
               <UButton
@@ -925,7 +1022,10 @@ const onDrop = async (dropIndex: number) => {
               </UButton>
             </div>
 
-            <p v-if="itemFormErrors.options" class="text-sm text-error">
+            <p
+              v-if="itemFormErrors.options"
+              class="text-sm text-error"
+            >
               {{ itemFormErrors.options }}
             </p>
 
@@ -936,7 +1036,10 @@ const onDrop = async (dropIndex: number) => {
               Adicione pelo menos uma opção de resposta.
             </div>
 
-            <div v-else class="space-y-2">
+            <div
+              v-else
+              class="space-y-2"
+            >
               <div
                 v-for="(option, index) in options"
                 :key="`${index}-${option.id ?? 'new'}`"
@@ -961,10 +1064,18 @@ const onDrop = async (dropIndex: number) => {
       </template>
 
       <template #footer>
-        <UButton color="neutral" variant="ghost" @click="itemFormOpen = false">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="itemFormOpen = false"
+        >
           Cancelar
         </UButton>
-        <UButton color="primary" :loading="itemFormSubmitting" @click="handleItemSubmit">
+        <UButton
+          color="primary"
+          :loading="itemFormSubmitting"
+          @click="handleItemSubmit"
+        >
           {{ itemFormMode === 'create' ? 'Criar item' : 'Salvar alterações' }}
         </UButton>
       </template>

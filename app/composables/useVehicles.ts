@@ -491,21 +491,21 @@ export function useVehiclesPaginated() {
     const query = new URLSearchParams(params).toString()
 
     try {
-      const response = await useApiFetch<PaginatedEnvelope>(`/vehicles/paginated?${query}`)
+      const response = await useApiFetch<PaginatedEnvelope>(
+        `/vehicles/paginated?${query}`
+      )
       const page = response.data
 
       if (append) {
         vehicles.value = [...vehicles.value, ...(page.items ?? [])]
-      }
-      else {
+      } else {
         vehicles.value = page.items ?? []
       }
 
       nextCursor.value = page.next_cursor ?? null
       hasMore.value = page.has_more ?? !!page.next_cursor
       status.value = 'success'
-    }
-    catch (err) {
+    } catch (err) {
       if (!append) vehicles.value = []
       status.value = 'error'
       error.value = err
@@ -525,8 +525,7 @@ export function useVehiclesPaginated() {
     isLoadingMore.value = true
     try {
       await fetchPage(nextCursor.value, true)
-    }
-    finally {
+    } finally {
       isLoadingMore.value = false
     }
   }
@@ -635,8 +634,7 @@ export function useVehiclesSelector() {
       )
       vehicles.value = response.data
       status.value = 'success'
-    }
-    catch (err) {
+    } catch (err) {
       vehicles.value = []
       status.value = 'error'
       error.value = err

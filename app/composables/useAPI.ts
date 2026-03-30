@@ -21,11 +21,9 @@ export function useAPI<TData, TRaw = TData>(
 ): AsyncData<TData, NuxtError<unknown> | undefined> {
   const { $api } = useNuxtApp()
   const resolvedUrl = typeof url === 'function' ? computed(url) : ref(url)
-  const resolvedKey =
-    typeof options?.key === 'function'
-      ? computed(options.key)
-      : options?.key
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const resolvedKey
+    = typeof options?.key === 'function' ? computed(options.key) : options?.key
+
   const { key, watch, transform: _transform, ...restOptions } = options ?? {}
   const asyncOptions: {
     immediate?: boolean;
@@ -61,17 +59,16 @@ export function useAPI<TData, TRaw = TData>(
   }
 
   if (resolvedKey) {
-    return useAsyncData<TData>(
-      resolvedKey,
-      handler,
-      asyncOptions
-    ) as AsyncData<TData, NuxtError<unknown> | undefined>
+    return useAsyncData<TData>(resolvedKey, handler, asyncOptions) as AsyncData<
+      TData,
+      NuxtError<unknown> | undefined
+    >
   }
 
-  return useAsyncData<TData>(
-    handler,
-    asyncOptions
-  ) as AsyncData<TData, NuxtError<unknown> | undefined>
+  return useAsyncData<TData>(handler, asyncOptions) as AsyncData<
+    TData,
+    NuxtError<unknown> | undefined
+  >
 }
 
 export function useApiFetch<T>(

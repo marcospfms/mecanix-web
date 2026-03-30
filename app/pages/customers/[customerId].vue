@@ -43,10 +43,10 @@ const taxId = ref('')
 const phone = ref('')
 const email = ref('')
 const formErrors = ref<{
-  name?: string
-  tax_id?: string
-  phone?: string
-  email?: string
+  name?: string;
+  tax_id?: string;
+  phone?: string;
+  email?: string;
 }>({})
 
 const taxIdDigitsCount = computed(() => taxId.value.replace(/\D/g, '').length)
@@ -63,7 +63,12 @@ const openEdit = () => {
 }
 
 const validateForm = () => {
-  const errors: { name?: string; tax_id?: string; phone?: string; email?: string } = {}
+  const errors: {
+    name?: string;
+    tax_id?: string;
+    phone?: string;
+    email?: string;
+  } = {}
   const taxDigits = taxId.value.replace(/\D/g, '')
   const phoneDigits = phone.value.replace(/\D/g, '')
 
@@ -102,7 +107,10 @@ const handleEdit = async () => {
       email: email.value
     })
     await refresh()
-    toast.success({ title: 'Cliente atualizado', description: 'Os dados do cliente foram salvos.' })
+    toast.success({
+      title: 'Cliente atualizado',
+      description: 'Os dados do cliente foram salvos.'
+    })
     editFormOpen.value = false
   } catch (err: unknown) {
     toast.error({
@@ -123,7 +131,10 @@ const handleDelete = async () => {
   confirmLoading.value = true
   try {
     await deleteCustomer(customer.value.id)
-    toast.success({ title: 'Cliente removido', description: 'O cliente foi excluído com sucesso.' })
+    toast.success({
+      title: 'Cliente removido',
+      description: 'O cliente foi excluído com sucesso.'
+    })
     confirmOpen.value = false
     await navigateTo({ name: 'customers' })
   } catch (err: unknown) {
@@ -143,10 +154,12 @@ const vehicleLicensePlate = ref('')
 const vehicleModel = ref('')
 const vehicleModelYear = ref('')
 const vehicleColor = ref('')
-const vehicleFormErrors = ref<{ license_plate?: string; model_year?: string }>({})
+const vehicleFormErrors = ref<{ license_plate?: string; model_year?: string }>(
+  {}
+)
 
-const vehiclePlateCharsCount = computed(() =>
-  vehicleLicensePlate.value.replace(/[^a-zA-Z0-9]/g, '').length
+const vehiclePlateCharsCount = computed(
+  () => vehicleLicensePlate.value.replace(/[^a-zA-Z0-9]/g, '').length
 )
 
 const resetVehicleForm = () => {
@@ -182,7 +195,8 @@ const validateVehicleForm = () => {
 }
 
 const handleVehicleCreate = async () => {
-  if (!validateVehicleForm() || vehicleFormSubmitting.value || !customer.value) return
+  if (!validateVehicleForm() || vehicleFormSubmitting.value || !customer.value)
+    return
 
   vehicleFormSubmitting.value = true
   try {
@@ -190,10 +204,15 @@ const handleVehicleCreate = async () => {
       customer_id: customer.value.id,
       license_plate: vehicleLicensePlate.value,
       model: vehicleModel.value,
-      model_year: vehicleModelYear.value.trim() ? Number(vehicleModelYear.value) : null,
+      model_year: vehicleModelYear.value.trim()
+        ? Number(vehicleModelYear.value)
+        : null,
       color: vehicleColor.value
     })
-    toast.success({ title: 'Veículo criado', description: 'O novo veículo foi adicionado com sucesso.' })
+    toast.success({
+      title: 'Veículo criado',
+      description: 'O novo veículo foi adicionado com sucesso.'
+    })
     vehicleFormOpen.value = false
     resetVehicleForm()
     await refreshVehicles()
@@ -223,7 +242,10 @@ const handleVehicleCreate = async () => {
             :to="{ name: 'customers' }"
             class="inline-flex items-center gap-1.5 text-sm text-toned transition-colors hover:text-highlighted"
           >
-            <UIcon name="i-lucide-arrow-left" class="size-4" />
+            <UIcon
+              name="i-lucide-arrow-left"
+              class="size-4"
+            />
             Clientes
           </NuxtLink>
           <h1 class="text-3xl font-semibold tracking-tight text-highlighted">
@@ -263,12 +285,16 @@ const handleVehicleCreate = async () => {
       <UCard class="rounded-2xl border-default">
         <div class="space-y-5">
           <!-- Header: ícone + nome + ações -->
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div
+            class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+          >
             <div class="flex items-center gap-3">
               <div
                 class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
               >
-                <span class="text-sm font-semibold uppercase tracking-[0.08em] text-primary">
+                <span
+                  class="text-sm font-semibold uppercase tracking-[0.08em] text-primary"
+                >
                   {{ customer.name.slice(0, 2) }}
                 </span>
               </div>
@@ -303,9 +329,13 @@ const handleVehicleCreate = async () => {
           </div>
 
           <!-- Info blocks -->
-          <div class="grid gap-3 rounded-xl border border-default bg-muted/20 p-4 sm:grid-cols-2">
+          <div
+            class="grid gap-3 rounded-xl border border-default bg-muted/20 p-4 sm:grid-cols-2"
+          >
             <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Documento
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
@@ -313,7 +343,9 @@ const handleVehicleCreate = async () => {
               </p>
             </div>
             <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Telefone
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
@@ -321,7 +353,9 @@ const handleVehicleCreate = async () => {
               </p>
             </div>
             <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 E-mail
               </p>
               <p class="mt-1 text-sm font-medium text-highlighted">
@@ -329,7 +363,9 @@ const handleVehicleCreate = async () => {
               </p>
             </div>
             <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned"
+              >
                 Cadastro
               </p>
               <NuxtTime
@@ -459,7 +495,9 @@ const handleVehicleCreate = async () => {
       <template #body>
         <div class="space-y-5">
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">Nome</label>
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >Nome</label>
             <UInput
               v-model="name"
               placeholder="Nome do cliente"
@@ -468,13 +506,18 @@ const handleVehicleCreate = async () => {
               :maxlength="255"
               @update:model-value="formErrors.name = undefined"
             />
-            <p v-if="formErrors.name" class="text-sm text-error">
+            <p
+              v-if="formErrors.name"
+              class="text-sm text-error"
+            >
               {{ formErrors.name }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">Documento</label>
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >Documento</label>
             <UInput
               :model-value="taxId"
               placeholder="CPF ou CNPJ"
@@ -491,13 +534,18 @@ const handleVehicleCreate = async () => {
             <p class="text-right text-xs text-toned">
               {{ taxIdDigitsCount }}/14
             </p>
-            <p v-if="formErrors.tax_id" class="text-sm text-error">
+            <p
+              v-if="formErrors.tax_id"
+              class="text-sm text-error"
+            >
               {{ formErrors.tax_id }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">Telefone</label>
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >Telefone</label>
             <UInput
               :model-value="phone"
               placeholder="(11) 91234-5678"
@@ -514,13 +562,18 @@ const handleVehicleCreate = async () => {
             <p class="text-right text-xs text-toned">
               {{ phoneDigitsCount }}/11
             </p>
-            <p v-if="formErrors.phone" class="text-sm text-error">
+            <p
+              v-if="formErrors.phone"
+              class="text-sm text-error"
+            >
               {{ formErrors.phone }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">E-mail</label>
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >E-mail</label>
             <UInput
               v-model="email"
               type="email"
@@ -529,7 +582,10 @@ const handleVehicleCreate = async () => {
               class="w-full"
               @update:model-value="formErrors.email = undefined"
             />
-            <p v-if="formErrors.email" class="text-sm text-error">
+            <p
+              v-if="formErrors.email"
+              class="text-sm text-error"
+            >
               {{ formErrors.email }}
             </p>
           </div>
@@ -537,10 +593,18 @@ const handleVehicleCreate = async () => {
       </template>
 
       <template #footer>
-        <UButton color="neutral" variant="ghost" @click="editFormOpen = false">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="editFormOpen = false"
+        >
           Cancelar
         </UButton>
-        <UButton color="primary" :loading="formSubmitting" @click="handleEdit">
+        <UButton
+          color="primary"
+          :loading="formSubmitting"
+          @click="handleEdit"
+        >
           Salvar alterações
         </UButton>
       </template>
@@ -570,7 +634,9 @@ const handleVehicleCreate = async () => {
       <template #body>
         <div class="space-y-4">
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">Placa</label>
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >Placa</label>
             <UInput
               v-model="vehicleLicensePlate"
               placeholder="ABC-1234"
@@ -582,13 +648,18 @@ const handleVehicleCreate = async () => {
             <p class="text-right text-xs text-toned">
               {{ vehiclePlateCharsCount }}/7
             </p>
-            <p v-if="vehicleFormErrors.license_plate" class="text-sm text-error">
+            <p
+              v-if="vehicleFormErrors.license_plate"
+              class="text-sm text-error"
+            >
               {{ vehicleFormErrors.license_plate }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">Modelo</label>
+            <label
+              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+            >Modelo</label>
             <UInput
               v-model="vehicleModel"
               placeholder="Ex.: Onix LT"
@@ -600,7 +671,9 @@ const handleVehicleCreate = async () => {
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-2">
-              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">Ano</label>
+              <label
+                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >Ano</label>
               <UInput
                 v-model="vehicleModelYear"
                 placeholder="2024"
@@ -610,13 +683,18 @@ const handleVehicleCreate = async () => {
                 :maxlength="4"
                 @update:model-value="vehicleFormErrors.model_year = undefined"
               />
-              <p v-if="vehicleFormErrors.model_year" class="text-sm text-error">
+              <p
+                v-if="vehicleFormErrors.model_year"
+                class="text-sm text-error"
+              >
                 {{ vehicleFormErrors.model_year }}
               </p>
             </div>
 
             <div class="space-y-2">
-              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">Cor</label>
+              <label
+                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >Cor</label>
               <UInput
                 v-model="vehicleColor"
                 placeholder="Ex.: Preto"
@@ -630,10 +708,18 @@ const handleVehicleCreate = async () => {
       </template>
 
       <template #footer>
-        <UButton color="neutral" variant="ghost" @click="vehicleFormOpen = false">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="vehicleFormOpen = false"
+        >
           Cancelar
         </UButton>
-        <UButton color="primary" :loading="vehicleFormSubmitting" @click="handleVehicleCreate">
+        <UButton
+          color="primary"
+          :loading="vehicleFormSubmitting"
+          @click="handleVehicleCreate"
+        >
           Criar veículo
         </UButton>
       </template>

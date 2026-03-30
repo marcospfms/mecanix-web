@@ -125,7 +125,8 @@ const isReadonly = computed(() => checklist.value?.is_completed ?? false)
 const isRequiredAndUnfilled = (item: VehicleChecklistItem): boolean => {
   if (!item.is_required) return false
   if (item.is_completable) return !localChecked[item.id]
-  if ((item.options?.length ?? 0) > 0) return (localSelections[item.id]?.length ?? 0) === 0
+  if ((item.options?.length ?? 0) > 0)
+    return (localSelections[item.id]?.length ?? 0) === 0
   return false
 }
 
@@ -151,7 +152,10 @@ const handleFinalize = async () => {
   } catch (err: unknown) {
     toast.error({
       title: 'Falha ao finalizar',
-      description: getErrorMessage(err, 'Não foi possível registrar a quilometragem.')
+      description: getErrorMessage(
+        err,
+        'Não foi possível registrar a quilometragem.'
+      )
     })
   } finally {
     finalizing.value = false
@@ -568,11 +572,12 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
                     "
                     :disabled="isReadonly"
                     @click="
-                      !isReadonly && handleOptionChange(
-                        item,
-                        option.id,
-                        !isOptionSelected(item.id, option.id)
-                      )
+                      !isReadonly
+                        && handleOptionChange(
+                          item,
+                          option.id,
+                          !isOptionSelected(item.id, option.id)
+                        )
                     "
                   >
                     {{ option.label }}

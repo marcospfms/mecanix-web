@@ -364,7 +364,7 @@ const handleRefresh = async () => {
       title="Selecionar veículo"
       description="Escolha o veículo para iniciar o checklist."
       :ui="{
-        body: 'px-3 py-4 sm:px-4 sm:py-5',
+        body: 'px-3 py-4 sm:px-4 sm:py-5'
       }"
     >
       <template #body>
@@ -407,7 +407,11 @@ const handleRefresh = async () => {
           <AppEmpty
             v-else-if="!hasVehicles"
             title="Nenhum veículo encontrado"
-            :description="search.length > 0 ? 'Tente buscar com termos diferentes.' : 'Nenhum veículo cadastrado ainda.'"
+            :description="
+              search.length > 0
+                ? 'Tente buscar com termos diferentes.'
+                : 'Nenhum veículo cadastrado ainda.'
+            "
             icon="i-lucide-car-front"
           />
 

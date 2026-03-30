@@ -4,13 +4,13 @@ import { useApiFetch } from './useAPI'
 // ─── Permission types ────────────────────────────────────────────────
 export type PermissionActionKey = 'view' | 'create' | 'update' | 'delete'
 
-export type PermissionModuleKey =
-  | 'companies'
-  | 'customers'
-  | 'vehicles'
-  | 'checklist_templates'
-  | 'checklists'
-  | 'employees'
+export type PermissionModuleKey
+  = | 'companies'
+    | 'customers'
+    | 'vehicles'
+    | 'checklist_templates'
+    | 'checklists'
+    | 'employees'
 
 export type PermissionActions = {
   view: boolean;
@@ -28,46 +28,99 @@ export type EmployeePermissions = {
   employees: PermissionActions;
 }
 
-export const permissionModules: Array<{ key: PermissionModuleKey; label: string; description: string }> = [
-  { key: 'companies', label: 'Lojas', description: 'Configurações e dados centrais da loja.' },
-  { key: 'customers', label: 'Clientes', description: 'Cadastro e manutenção de clientes.' },
-  { key: 'vehicles', label: 'Veículos', description: 'Cadastro, edição e exclusão de veículos.' },
-  { key: 'checklist_templates', label: 'Templates', description: 'Modelos usados para gerar checklists.' },
-  { key: 'checklists', label: 'Checklists', description: 'Execução, edição e histórico das inspeções.' },
-  { key: 'employees', label: 'Equipe', description: 'Acessos, funções e senhas da equipe.' },
+export const permissionModules: Array<{
+  key: PermissionModuleKey;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: 'companies',
+    label: 'Lojas',
+    description: 'Configurações e dados centrais da loja.'
+  },
+  {
+    key: 'customers',
+    label: 'Clientes',
+    description: 'Cadastro e manutenção de clientes.'
+  },
+  {
+    key: 'vehicles',
+    label: 'Veículos',
+    description: 'Cadastro, edição e exclusão de veículos.'
+  },
+  {
+    key: 'checklist_templates',
+    label: 'Templates',
+    description: 'Modelos usados para gerar checklists.'
+  },
+  {
+    key: 'checklists',
+    label: 'Checklists',
+    description: 'Execução, edição e histórico das inspeções.'
+  },
+  {
+    key: 'employees',
+    label: 'Equipe',
+    description: 'Acessos, funções e senhas da equipe.'
+  }
 ]
 
-export const permissionActions: Array<{ key: PermissionActionKey; label: string }> = [
+export const permissionActions: Array<{
+  key: PermissionActionKey;
+  label: string;
+}> = [
   { key: 'view', label: 'Ver' },
   { key: 'create', label: 'Criar' },
   { key: 'update', label: 'Editar' },
-  { key: 'delete', label: 'Excluir' },
+  { key: 'delete', label: 'Excluir' }
 ]
 
-export function getPermissionPreset(role: 'manager' | 'technician'): EmployeePermissions {
+export function getPermissionPreset(
+  role: 'manager' | 'technician'
+): EmployeePermissions {
   if (role === 'manager') {
     return {
       companies: { view: true, create: false, update: true, delete: false },
       customers: { view: true, create: true, update: true, delete: false },
       vehicles: { view: true, create: true, update: true, delete: false },
-      checklist_templates: { view: true, create: true, update: true, delete: false },
+      checklist_templates: {
+        view: true,
+        create: true,
+        update: true,
+        delete: false
+      },
       checklists: { view: true, create: true, update: true, delete: false },
-      employees: { view: true, create: true, update: true, delete: false },
+      employees: { view: true, create: true, update: true, delete: false }
     }
   }
   return {
     companies: { view: true, create: false, update: false, delete: false },
     customers: { view: true, create: true, update: true, delete: false },
     vehicles: { view: true, create: true, update: true, delete: false },
-    checklist_templates: { view: true, create: false, update: false, delete: false },
+    checklist_templates: {
+      view: true,
+      create: false,
+      update: false,
+      delete: false
+    },
     checklists: { view: true, create: true, update: true, delete: false },
-    employees: { view: false, create: false, update: false, delete: false },
+    employees: { view: false, create: false, update: false, delete: false }
   }
 }
 
-export function detectRoleFromPermissions(permissions: EmployeePermissions): 'manager' | 'technician' | 'custom' {
-  if (JSON.stringify(permissions) === JSON.stringify(getPermissionPreset('manager'))) return 'manager'
-  if (JSON.stringify(permissions) === JSON.stringify(getPermissionPreset('technician'))) return 'technician'
+export function detectRoleFromPermissions(
+  permissions: EmployeePermissions
+): 'manager' | 'technician' | 'custom' {
+  if (
+    JSON.stringify(permissions)
+    === JSON.stringify(getPermissionPreset('manager'))
+  )
+    return 'manager'
+  if (
+    JSON.stringify(permissions)
+    === JSON.stringify(getPermissionPreset('technician'))
+  )
+    return 'technician'
   return 'custom'
 }
 
@@ -184,10 +237,11 @@ export function useEmployees() {
     const term = search.value.trim().toLowerCase()
     if (!term) return employeesResolved.value
 
-    return employeesResolved.value.filter(emp =>
-      emp.user.name.toLowerCase().includes(term)
-      || (emp.user.username ?? '').toLowerCase().includes(term)
-      || emp.company.name.toLowerCase().includes(term)
+    return employeesResolved.value.filter(
+      emp =>
+        emp.user.name.toLowerCase().includes(term)
+        || (emp.user.username ?? '').toLowerCase().includes(term)
+        || emp.company.name.toLowerCase().includes(term)
     )
   })
 
@@ -244,10 +298,9 @@ export function useEmployees() {
     companyId: number,
     employeeId: number
   ): Promise<void> => {
-    await useApiFetch(
-      `/companies/${companyId}/employees/${employeeId}`,
-      { method: 'DELETE' }
-    )
+    await useApiFetch(`/companies/${companyId}/employees/${employeeId}`, {
+      method: 'DELETE'
+    })
 
     setEmployees(
       employeesResolved.value.map(emp =>

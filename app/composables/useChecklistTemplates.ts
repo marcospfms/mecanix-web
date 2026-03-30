@@ -82,7 +82,8 @@ export function useVehicleTypes() {
     error.value = null
 
     try {
-      const response = await useApiFetch<ApiEnvelope<VehicleType[]>>('/vehicle-types')
+      const response
+        = await useApiFetch<ApiEnvelope<VehicleType[]>>('/vehicle-types')
       vehicleTypesState.value = response.data
       status.value = 'success'
       return vehicleTypesState.value
@@ -143,7 +144,9 @@ export function useChecklistTemplates() {
     error.value = null
 
     try {
-      const response = await useApiFetch<ApiEnvelope<ChecklistTemplate[]>>('/checklist-templates')
+      const response = await useApiFetch<ApiEnvelope<ChecklistTemplate[]>>(
+        '/checklist-templates'
+      )
       templatesState.value = response.data
       status.value = 'success'
       return templatesState.value
@@ -442,7 +445,9 @@ export function useChecklistItemActions(
         body: {
           name: payload.name.trim(),
           description: payload.description?.trim() || null,
-          ...(payload.order_index != null && { order_index: payload.order_index }),
+          ...(payload.order_index != null && {
+            order_index: payload.order_index
+          }),
           is_completable: payload.is_completable ?? false,
           allows_multiple_responses: payload.allows_multiple_responses ?? false,
           is_required: payload.is_required ?? false,

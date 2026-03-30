@@ -10,12 +10,7 @@ const toast = useAppToast()
 const selectedEmployeeUserId = ref<number | null>(null)
 const manualRefreshing = ref(false)
 
-const {
-  data: stats,
-  status,
-  error,
-  refresh
-} = useDashboard(selectedEmployeeUserId)
+const { data: stats, status, refresh } = useDashboard(selectedEmployeeUserId)
 
 const emptyStats = (): NonNullable<typeof stats.value> => ({
   total_companies: 0,
@@ -123,19 +118,23 @@ const summaryCards = computed(() =>
   ].filter((item): item is NonNullable<typeof item> => item !== null)
 )
 
-const recentExecutions = computed(() => statsResolved.value.recent_executions ?? [])
-const employeeStats = computed(() => statsResolved.value.checklists_by_employee ?? [])
+const recentExecutions = computed(
+  () => statsResolved.value.recent_executions ?? []
+)
+const employeeStats = computed(
+  () => statsResolved.value.checklists_by_employee ?? []
+)
 const isEmptyDashboard = computed(() => {
   return (
-    (statsResolved.value.total_companies ?? 0) === 0 &&
-    (statsResolved.value.total_customers ?? 0) === 0 &&
-    (statsResolved.value.total_vehicles ?? 0) === 0 &&
-    (statsResolved.value.checklists_templates ?? 0) === 0 &&
-    statsResolved.value.checklists_total === 0 &&
-    statsResolved.value.checklists_month_total === 0 &&
-    statsResolved.value.checklists_vehicles_inspected_this_month === 0 &&
-    recentExecutions.value.length === 0 &&
-    employeeStats.value.length === 0
+    (statsResolved.value.total_companies ?? 0) === 0
+    && (statsResolved.value.total_customers ?? 0) === 0
+    && (statsResolved.value.total_vehicles ?? 0) === 0
+    && (statsResolved.value.checklists_templates ?? 0) === 0
+    && statsResolved.value.checklists_total === 0
+    && statsResolved.value.checklists_month_total === 0
+    && statsResolved.value.checklists_vehicles_inspected_this_month === 0
+    && recentExecutions.value.length === 0
+    && employeeStats.value.length === 0
   )
 })
 
@@ -331,7 +330,8 @@ const handleRefresh = async () => {
                 </div>
 
                 <p class="mt-3 text-sm text-toned">
-                  {{ statsResolved.checklists_draft }} checklist(s) ainda em andamento.
+                  {{ statsResolved.checklists_draft }} checklist(s) ainda em
+                  andamento.
                 </p>
               </div>
             </div>
@@ -450,7 +450,9 @@ const handleRefresh = async () => {
                         Data
                       </p>
                       <NuxtTime
-                        :datetime="execution.executed_at ?? execution.created_at"
+                        :datetime="
+                          execution.executed_at ?? execution.created_at
+                        "
                         locale="pt-BR"
                         day="2-digit"
                         month="2-digit"
