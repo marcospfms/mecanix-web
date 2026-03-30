@@ -455,8 +455,9 @@ export function useMileageHistory(
 }
 
 type PaginatedVehiclesResponse = {
-  data: Vehicle[];
+  items: Vehicle[];
   next_cursor: string | null;
+  has_more: boolean;
   per_page: number;
 }
 
@@ -494,14 +495,14 @@ export function useVehiclesPaginated() {
       const page = response.data
 
       if (append) {
-        vehicles.value = [...vehicles.value, ...(page.data ?? [])]
+        vehicles.value = [...vehicles.value, ...(page.items ?? [])]
       }
       else {
-        vehicles.value = page.data ?? []
+        vehicles.value = page.items ?? []
       }
 
       nextCursor.value = page.next_cursor ?? null
-      hasMore.value = !!page.next_cursor
+      hasMore.value = page.has_more ?? !!page.next_cursor
       status.value = 'success'
     }
     catch (err) {
@@ -529,6 +530,21 @@ export function useVehiclesPaginated() {
       isLoadingMore.value = false
     }
   }
+
+  watch(
+    [() => auth.hydrated.value, () => auth.token.value],
+    async ([hydrated, token]) => {
+      if (!hydrated) return
+      if (!token) {
+        vehicles.value = []
+        status.value = 'idle'
+        error.value = null
+        return
+      }
+      await refresh()
+    },
+    { immediate: true }
+  )
 
   return {
     search,

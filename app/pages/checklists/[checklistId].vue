@@ -21,7 +21,6 @@ const {
 } = useChecklistDetail(checklistId)
 const {
   updateChecklistItem,
-  updateChecklistItemNotes,
   deleteChecklist,
   generatePdf,
   recordChecklistMileage
@@ -32,10 +31,8 @@ const { data: vehicle } = useVehicle(vehicleId)
 const { data: checklistMileage } = useChecklistMileage(checklistId)
 
 const localChecked = reactive<Record<number, boolean>>({})
-const localNotes = reactive<Record<number, string>>({})
 const localSelections = reactive<Record<number, number[]>>({})
 const savingItems = reactive<Record<number, boolean>>({})
-const noteTimers: Record<number, ReturnType<typeof setTimeout> | null> = {}
 
 watch(
   () => checklist.value?.items,
@@ -45,12 +42,10 @@ watch(
     for (const item of items) {
       if (!(item.id in localChecked)) {
         localChecked[item.id] = item.is_checked
-        localNotes[item.id] = item.notes ?? ''
         localSelections[item.id] = (item.selections ?? []).map(
           s => s.vehicle_checklist_item_option_id
         )
         savingItems[item.id] = false
-        noteTimers[item.id] = null
       }
     }
   },
@@ -109,52 +104,17 @@ const handleOptionChange = async (
   }
 }
 
-const handleNotesChange = (item: VehicleChecklistItem, notes: string) => {
-  localNotes[item.id] = notes
-
-  const existing = noteTimers[item.id]
-  if (existing !== null && existing !== undefined) {
-    clearTimeout(existing)
-  }
-
-  noteTimers[item.id] = setTimeout(async () => {
-    savingItems[item.id] = true
-
-    try {
-      await updateChecklistItemNotes(item.id, notes || null)
-    } catch {
-      toast.error({
-        title: 'Falha ao salvar nota',
-        description: 'Não foi possível salvar a nota.'
-      })
-    } finally {
-      savingItems[item.id] = false
-    }
-  }, 1500)
-}
-
 const localMileage = ref('')
 const mileageSaved = ref(false)
-const mileageSaving = ref(false)
+const finalizing = ref(false)
 
-// Pre-populate from existing checklist mileage record (priority)
+// Pre-populate from existing checklist mileage record
 watch(
   () => checklistMileage.value,
   (km) => {
     if (km) {
       localMileage.value = String(km.mileage)
       mileageSaved.value = true
-    }
-  },
-  { immediate: true }
-)
-
-// Fallback: use vehicle's latest mileage only if no checklist record yet
-watch(
-  () => vehicle.value?.latest_mileage,
-  (v) => {
-    if (v != null && !localMileage.value && !checklistMileage.value) {
-      localMileage.value = String(v)
     }
   },
   { immediate: true }
@@ -169,22 +129,32 @@ const isRequiredAndUnfilled = (item: VehicleChecklistItem): boolean => {
   return false
 }
 
-const handleSaveMileage = async () => {
-  const mileage = Number(localMileage.value)
-  if (!mileage || !vehicleId.value || mileageSaving.value) return
+const handleFinalize = async () => {
+  if (finalizing.value) return
+  finalizing.value = true
 
-  mileageSaving.value = true
   try {
-    await recordChecklistMileage(vehicleId.value, checklistId.value, mileage)
-    mileageSaved.value = true
-    toast.success({ title: 'Quilometragem registrada' })
+    const mileage = Number(localMileage.value)
+    if (mileage && vehicleId.value && !mileageSaved.value) {
+      await recordChecklistMileage(vehicleId.value, checklistId.value, mileage)
+      mileageSaved.value = true
+    }
+
+    if (vehicleId.value) {
+      await navigateTo({
+        name: 'checklists-vehicles-vehicleId',
+        params: { vehicleId: String(vehicleId.value) }
+      })
+    } else {
+      await navigateTo({ name: 'checklists' })
+    }
   } catch (err: unknown) {
     toast.error({
-      title: 'Falha ao salvar quilometragem',
+      title: 'Falha ao finalizar',
       description: getErrorMessage(err, 'Não foi possível registrar a quilometragem.')
     })
   } finally {
-    mileageSaving.value = false
+    finalizing.value = false
   }
 }
 
@@ -476,54 +446,6 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
         </UCard>
       </div>
 
-      <!-- Quilometragem -->
-      <UCard class="rounded-2xl border-default">
-        <div class="space-y-3">
-          <div class="flex items-end gap-3">
-            <div class="flex-1 space-y-2">
-              <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                Quilometragem atual
-              </p>
-              <UInput
-                v-model="localMileage"
-                placeholder="Ex.: 85000"
-                inputmode="numeric"
-                size="xl"
-                class="w-full"
-                :disabled="isReadonly || mileageSaved"
-              />
-            </div>
-            <UButton
-              color="primary"
-              variant="soft"
-              icon="i-lucide-gauge"
-              size="xl"
-              :loading="mileageSaving"
-              :disabled="isReadonly || mileageSaved || !localMileage"
-              @click="handleSaveMileage"
-            >
-              {{ mileageSaved ? 'Registrado' : 'Registrar' }}
-            </UButton>
-          </div>
-          <p
-            v-if="mileageSaved && checklistMileage"
-            class="flex items-center gap-1.5 text-xs text-toned"
-          >
-            <UIcon
-              name="i-lucide-check-circle-2"
-              class="size-3.5 text-success"
-            />
-            Quilometragem registrada em
-            <NuxtTime
-              :datetime="checklistMileage.created_at"
-              month="2-digit"
-              day="2-digit"
-              year="numeric"
-            />
-          </p>
-        </div>
-      </UCard>
-
       <section class="space-y-3">
         <h2 class="text-lg font-semibold text-highlighted">
           Itens da inspeção
@@ -657,28 +579,63 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
                   </button>
                 </div>
               </div>
-
-              <div class="space-y-1.5">
-                <p
-                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                >
-                  Observações
-                </p>
-                <UTextarea
-                  :model-value="localNotes[item.id]"
-                  placeholder="Adicione observações sobre este item..."
-                  class="w-full"
-                  :rows="2"
-                  :disabled="isReadonly"
-                  @update:model-value="
-                    val => handleNotesChange(item, String(val ?? ''))
-                  "
-                />
-              </div>
             </div>
           </UCard>
         </div>
       </section>
+
+      <!-- Finalizar -->
+      <template v-if="!isReadonly">
+        <UAlert
+          v-if="vehicle?.latest_mileage"
+          color="info"
+          variant="soft"
+          icon="i-lucide-gauge"
+          title="Última quilometragem registrada"
+          :description="`${vehicle.latest_mileage.toLocaleString('pt-BR')} km`"
+        />
+
+        <UCard class="rounded-2xl border-default">
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <p
+                class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >
+                Quilometragem atual
+              </p>
+              <UInput
+                v-model="localMileage"
+                placeholder="Ex.: 85000"
+                inputmode="numeric"
+                size="xl"
+                class="w-full"
+                :disabled="mileageSaved"
+              />
+              <p
+                v-if="mileageSaved"
+                class="flex items-center gap-1.5 text-xs text-toned"
+              >
+                <UIcon
+                  name="i-lucide-check-circle-2"
+                  class="size-3.5 text-success"
+                />
+                Quilometragem já registrada para este checklist
+              </p>
+            </div>
+
+            <UButton
+              color="primary"
+              icon="i-lucide-check-circle"
+              size="xl"
+              block
+              :loading="finalizing"
+              @click="handleFinalize"
+            >
+              Finalizar
+            </UButton>
+          </div>
+        </UCard>
+      </template>
     </template>
 
     <AppConfirm

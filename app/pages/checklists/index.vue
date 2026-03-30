@@ -10,6 +10,7 @@ definePageMeta({
 const toast = useAppToast()
 const manualRefreshing = ref(false)
 
+const vehicleSelectorOpen = ref(false)
 const templateSelectorOpen = ref(false)
 const templateSelectorSubmitting = ref(false)
 const selectedVehicle = ref<Vehicle | null>(null)
@@ -29,7 +30,7 @@ const { templates, status: templatesStatus } = useChecklistTemplates()
 const { createChecklist } = useChecklistActions()
 
 const isLoading = computed(
-  () => ['idle', 'pending'].includes(status.value) && vehicles.value.length === 0
+  () => status.value === 'pending' && vehicles.value.length === 0
 )
 const hasVehicles = computed(() => vehicles.value.length > 0)
 const needsMoreChars = computed(
@@ -57,19 +58,22 @@ watch(
   () => search.value,
   (value) => {
     if (searchTimer) clearTimeout(searchTimer)
-    if (value.length === 0) {
-      refresh()
-      return
+    if (value.length === 0 || value.length >= 4) {
+      searchTimer = setTimeout(() => refresh(), 300)
     }
-    if (value.length < 4) {
-      vehicles.value = []
-      return
-    }
-    searchTimer = setTimeout(() => refresh(), 400)
   }
 )
 
-onMounted(() => refresh())
+const openVehicleSelector = () => {
+  vehicleSelectorOpen.value = true
+}
+
+const handleVehicleSelected = (vehicle: Vehicle) => {
+  vehicleSelectorOpen.value = false
+  selectedVehicle.value = vehicle
+  selectedTemplateId.value = undefined
+  templateSelectorOpen.value = true
+}
 
 const openTemplateSelector = (vehicle: Vehicle) => {
   selectedVehicle.value = vehicle
@@ -158,6 +162,16 @@ const handleRefresh = async () => {
             histórico de execuções.
           </p>
         </div>
+
+        <UButton
+          color="primary"
+          icon="i-lucide-plus"
+          size="lg"
+          class="shrink-0"
+          @click="openVehicleSelector"
+        >
+          Novo checklist
+        </UButton>
       </div>
     </section>
 
@@ -342,6 +356,118 @@ const handleRefresh = async () => {
         </div>
       </template>
     </div>
+
+    <!-- Vehicle selector -->
+    <USlideover
+      v-model:open="vehicleSelectorOpen"
+      side="right"
+      title="Selecionar veículo"
+      description="Escolha o veículo para iniciar o checklist."
+      :ui="{
+        body: 'px-3 py-4 sm:px-4 sm:py-5',
+      }"
+    >
+      <template #body>
+        <div class="space-y-4">
+          <UInput
+            v-model="search"
+            placeholder="Buscar por placa, modelo ou cliente"
+            icon="i-lucide-search"
+            size="xl"
+            class="w-full"
+          >
+            <template
+              v-if="search"
+              #trailing
+            >
+              <UButton
+                color="neutral"
+                variant="link"
+                size="sm"
+                icon="i-lucide-circle-x"
+                aria-label="Limpar busca"
+                @click="search = ''"
+              />
+            </template>
+          </UInput>
+
+          <AppLoading
+            v-if="isLoading"
+            title="Carregando veículos"
+            description=""
+          />
+
+          <AppEmpty
+            v-else-if="needsMoreChars"
+            title="Continue digitando"
+            description="Digite ao menos 4 caracteres para buscar."
+            icon="i-lucide-search"
+          />
+
+          <AppEmpty
+            v-else-if="!hasVehicles"
+            title="Nenhum veículo encontrado"
+            :description="search.length > 0 ? 'Tente buscar com termos diferentes.' : 'Nenhum veículo cadastrado ainda.'"
+            icon="i-lucide-car-front"
+          />
+
+          <div
+            v-else
+            class="space-y-2"
+          >
+            <button
+              v-for="vehicle in vehicles"
+              :key="vehicle.id"
+              type="button"
+              class="w-full rounded-2xl border border-default bg-default p-4 text-left transition-colors hover:bg-muted/60 active:bg-muted"
+              @click="handleVehicleSelected(vehicle)"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex size-10 shrink-0 items-center justify-center rounded-xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
+                >
+                  <UIcon
+                    name="i-lucide-car-front"
+                    class="size-5 text-primary"
+                  />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-highlighted">
+                    {{ formatLicensePlate(vehicle.license_plate) }}
+                  </p>
+                  <p class="truncate text-xs text-toned">
+                    {{ vehicle.model || 'Modelo não informado' }}
+                    <template v-if="vehicle.customer?.name">
+                      · {{ vehicle.customer.name }}
+                    </template>
+                  </p>
+                </div>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted"
+                />
+              </div>
+            </button>
+
+            <div
+              v-if="hasMore || isLoadingMore"
+              class="flex justify-center pt-1"
+            >
+              <UButton
+                color="neutral"
+                variant="soft"
+                icon="i-lucide-chevron-down"
+                size="sm"
+                :loading="isLoadingMore"
+                @click="loadMore"
+              >
+                Carregar mais
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </template>
+    </USlideover>
 
     <!-- Template selector -->
     <USlideover
