@@ -312,7 +312,7 @@ export function useChecklistItems(
     return [...source].sort((a, b) => a.order_index - b.order_index)
   })
 
-  const { createItem, updateItem, deleteItem }
+  const { createItem, updateItem, deleteItem, reorderItems }
     = useChecklistItemActions(templateId)
 
   const createAndRefreshItem = async (payload: ChecklistItemPayload) => {
@@ -335,6 +335,11 @@ export function useChecklistItems(
     await itemsState.refresh()
   }
 
+  const reorderAndRefreshItems = async (orderedItems: ChecklistItem[]) => {
+    await reorderItems(orderedItems)
+    await itemsState.refresh()
+  }
+
   return {
     items,
     rawItems: itemsState.data,
@@ -343,7 +348,8 @@ export function useChecklistItems(
     refresh: itemsState.refresh,
     createItem: createAndRefreshItem,
     updateItem: updateAndRefreshItem,
-    deleteItem: deleteAndRefreshItem
+    deleteItem: deleteAndRefreshItem,
+    reorderItems: reorderAndRefreshItems
   }
 }
 
@@ -452,9 +458,36 @@ export function useChecklistItemActions(
     await useApiFetch(`/checklist-items/${id}`, { method: 'DELETE' })
   }
 
+  const reorderItems = async (orderedItems: ChecklistItem[]): Promise<void> => {
+    const updates = orderedItems
+      .map((item, index) => ({ item, newIndex: index }))
+      .filter(({ item, newIndex }) => item.order_index !== newIndex)
+
+    await Promise.all(
+      updates.map(({ item, newIndex }) =>
+        useApiFetch(`/checklist-items/${item.id}`, {
+          method: 'PUT',
+          body: {
+            name: item.name,
+            description: item.description,
+            order_index: newIndex,
+            is_completable: item.is_completable,
+            allows_multiple_responses: item.allows_multiple_responses,
+            is_required: item.is_required,
+            options: (item.options ?? []).map(o => ({
+              label: o.label,
+              order_index: o.order_index
+            }))
+          }
+        })
+      )
+    )
+  }
+
   return {
     createItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    reorderItems
   }
 }

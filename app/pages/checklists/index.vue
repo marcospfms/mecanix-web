@@ -8,7 +8,6 @@ definePageMeta({
 })
 
 const toast = useAppToast()
-const visibleCount = ref(20)
 const manualRefreshing = ref(false)
 
 const templateSelectorOpen = ref(false)
@@ -16,36 +15,61 @@ const templateSelectorSubmitting = ref(false)
 const selectedVehicle = ref<Vehicle | null>(null)
 const selectedTemplateId = ref<number | undefined>()
 
-const { search, vehicles, status, error, refresh } = useVehicles()
+const {
+  search,
+  vehicles,
+  status,
+  error,
+  refresh,
+  loadMore,
+  hasMore,
+  isLoadingMore
+} = useVehiclesPaginated()
 const { templates, status: templatesStatus } = useChecklistTemplates()
 const { createChecklist } = useChecklistActions()
 
-const displayedVehicles = computed(() =>
-  vehicles.value.slice(0, visibleCount.value)
-)
-const hasMoreVehicles = computed(
-  () => vehicles.value.length > visibleCount.value
-)
 const isLoading = computed(
-  () => status.value === 'pending' && vehicles.value.length === 0
+  () => ['idle', 'pending'].includes(status.value) && vehicles.value.length === 0
 )
 const hasVehicles = computed(() => vehicles.value.length > 0)
-
-const templateOptions = computed(() =>
-  (Array.isArray(templates.value) ? templates.value : []).map(
-    (t: ChecklistTemplate) => ({
-      label: t.name,
-      value: t.id
-    })
-  )
+const needsMoreChars = computed(
+  () => search.value.length > 0 && search.value.length < 4
 )
+
+const templateOptions = computed(() => {
+  const all = Array.isArray(templates.value) ? templates.value : []
+  const filtered = selectedVehicle.value?.vehicle_type_id
+    ? all.filter(
+        (t: ChecklistTemplate) =>
+          t.vehicle_type_id === null
+          || t.vehicle_type_id === selectedVehicle.value!.vehicle_type_id
+      )
+    : all
+  return filtered.map((t: ChecklistTemplate) => ({
+    label: t.name,
+    value: t.id
+  }))
+})
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(
   () => search.value,
-  () => {
-    visibleCount.value = 20
+  (value) => {
+    if (searchTimer) clearTimeout(searchTimer)
+    if (value.length === 0) {
+      refresh()
+      return
+    }
+    if (value.length < 4) {
+      vehicles.value = []
+      return
+    }
+    searchTimer = setTimeout(() => refresh(), 400)
   }
 )
+
+onMounted(() => refresh())
 
 const openTemplateSelector = (vehicle: Vehicle) => {
   selectedVehicle.value = vehicle
@@ -112,10 +136,6 @@ const handleRefresh = async () => {
   } finally {
     manualRefreshing.value = false
   }
-}
-
-const loadMore = () => {
-  visibleCount.value += 20
 }
 </script>
 
@@ -192,6 +212,20 @@ const loadMore = () => {
       />
 
       <AppEmpty
+        v-else-if="needsMoreChars"
+        title="Continue digitando"
+        description="Digite ao menos 4 caracteres para buscar veículos."
+        icon="i-lucide-search"
+      />
+
+      <AppEmpty
+        v-else-if="!hasVehicles && search.length > 0"
+        title="Nenhum veículo encontrado"
+        description="Tente buscar com termos diferentes."
+        icon="i-lucide-car-front"
+      />
+
+      <AppEmpty
         v-else-if="!hasVehicles"
         title="Nenhum veículo disponível"
         description="Cadastre primeiro um cliente e depois vincule um veículo para começar a realizar inspeções."
@@ -211,7 +245,7 @@ const loadMore = () => {
       <template v-else>
         <div class="grid gap-3">
           <UCard
-            v-for="vehicle in displayedVehicles"
+            v-for="vehicle in vehicles"
             :key="vehicle.id"
             class="w-full rounded-2xl border-default"
           >
@@ -293,13 +327,14 @@ const loadMore = () => {
         </div>
 
         <div
-          v-if="hasMoreVehicles"
+          v-if="hasMore || isLoadingMore"
           class="flex justify-center pt-2"
         >
           <UButton
             color="neutral"
             variant="soft"
             icon="i-lucide-chevron-down"
+            :loading="isLoadingMore"
             @click="loadMore"
           >
             Carregar mais

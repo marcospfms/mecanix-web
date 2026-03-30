@@ -26,7 +26,8 @@ const {
   refresh: refreshItems,
   createItem,
   updateItem,
-  deleteItem
+  deleteItem,
+  reorderItems
 } = useChecklistItems(templateId)
 const { types } = useVehicleTypes()
 const { deleteTemplate } = useChecklistTemplateActions()
@@ -272,6 +273,58 @@ const handleRefresh = async () => {
     manualRefreshing.value = false
   }
 }
+
+// Drag-and-drop reorder
+const localItems = ref<ChecklistItem[]>([])
+const draggedIndex = ref(-1)
+const dragOverIndex = ref(-1)
+const isReordering = ref(false)
+
+watch(() => items.value, (newItems) => {
+  localItems.value = [...(newItems ?? [])]
+}, { immediate: true })
+
+const onDragStart = (index: number) => {
+  draggedIndex.value = index
+}
+
+const onDragOver = (index: number) => {
+  if (draggedIndex.value !== -1) {
+    dragOverIndex.value = index
+  }
+}
+
+const onDragEnd = () => {
+  draggedIndex.value = -1
+  dragOverIndex.value = -1
+}
+
+const onDrop = async (dropIndex: number) => {
+  const from = draggedIndex.value
+  onDragEnd()
+
+  if (from === -1 || from === dropIndex) return
+
+  const newItems = [...localItems.value]
+  const [moved] = newItems.splice(from, 1)
+  newItems.splice(dropIndex, 0, moved)
+  localItems.value = newItems
+
+  if (isReordering.value) return
+  isReordering.value = true
+
+  try {
+    await reorderItems(localItems.value)
+  } catch (err: unknown) {
+    localItems.value = [...(items.value ?? [])]
+    toast.error({
+      title: 'Falha ao reordenar',
+      description: getErrorMessage(err, 'Não foi possível salvar a nova ordem.')
+    })
+  } finally {
+    isReordering.value = false
+  }
+}
 </script>
 
 <template>
@@ -429,17 +482,33 @@ const handleRefresh = async () => {
         </AppEmpty>
 
         <div v-else class="grid gap-3">
+          <p class="flex items-center gap-1 text-xs text-toned">
+            <UIcon name="i-lucide-grip-vertical" class="size-3.5" />
+            Arraste os itens para reordenar
+          </p>
           <UCard
-            v-for="item in items"
+            v-for="(item, index) in localItems"
             :key="item.id"
-            class="rounded-2xl border-default"
+            draggable="true"
+            :class="[
+              'rounded-2xl cursor-grab active:cursor-grabbing transition-all',
+              draggedIndex === index ? 'opacity-40 scale-95 border-default' : '',
+              dragOverIndex === index && draggedIndex !== index ? 'ring-2 ring-primary ring-offset-2' : 'border-default'
+            ]"
+            @dragstart="onDragStart(index)"
+            @dragover.prevent="onDragOver(index)"
+            @drop.prevent="onDrop(index)"
+            @dragend="onDragEnd"
           >
             <div class="space-y-3">
               <!-- Linha principal: ordem, nome, ações -->
               <div class="flex items-start gap-3">
-                <!-- Índice -->
-                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-default bg-muted/40 text-xs font-semibold text-toned">
-                  {{ item.order_index }}
+                <!-- Alça de arrasto + Índice -->
+                <div class="flex items-center gap-1.5">
+                  <UIcon name="i-lucide-grip-vertical" class="size-4 shrink-0 text-muted" />
+                  <div class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-default bg-muted/40 text-xs font-semibold text-toned">
+                    {{ item.order_index }}
+                  </div>
                 </div>
 
                 <!-- Conteúdo -->

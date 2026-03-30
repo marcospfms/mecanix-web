@@ -1,6 +1,6 @@
 # Roadmap V1.0 — Fundação (Mecanix Client)
 
-> **Status**: Fase 1 concluída · Fase 2 concluída · Fase 3 concluída · Fase 4 concluída · Fase 5 concluída · Fase 6 em andamento · Fase 7 em andamento · Fase 8 em andamento  
+> **Status**: Concluído ✅ — Fases 1–10 implementadas  
 > **Referência app mobile**: `mecanix-app/` — todas as funcionalidades abaixo espelham o app, exceto assinatura/pagamento
 
 ## Objetivo
@@ -219,7 +219,8 @@ interface User {
     - Editar e excluir registros manuais
 - [x] Composable `useVehicles()` — `list`, `create()`, `update()`, `remove()`
 - [x] Composable `useMileageHistory(vehicleId)` — `list`, `create()`, `update()`, `remove()`
-- [ ] Migrar a listagem de veículos para paginação cursor real quando o endpoint do backend incluir veículos sem checklist
+- [x] Composable `useVehiclesPaginated()` — paginação cursor com busca remota (min 4 chars)
+- [x] Migrar a listagem de veículos para paginação cursor real — implementado em `/checklists` via `GET /api/vehicles/paginated`
 - [ ] Adicionar select de cliente com busca remota, se a base crescer a ponto de tornar o select local insuficiente
 - [x] Exibir últimos checklists do veículo no detalhe
 
@@ -234,7 +235,7 @@ interface User {
 | `latest_mileage`                     | Última km registrada                  |
 | `checklists_done / checklists_total` | Progresso de checklists               |
 
-> Situação atual da fase 6: em andamento. O módulo de veículos já existe com listagem, criação, edição, exclusão, detalhe, histórico manual de quilometragem e últimos checklists no detalhe. Ainda faltam fechar a paginação cursor real e, se necessário, o select remoto de clientes para concluir a fase conforme o roadmap original.
+> Fase 6 concluída. `useVehiclesPaginated()` implementado, vehicle_type_id adicionado ao tipo Vehicle, paginação cursor usada em `/checklists`. O select de cliente com busca remota permanece como melhoria futura condicional ao crescimento da base.
 
 ---
 
@@ -270,12 +271,12 @@ interface User {
   - Campos: nome (obrigatório), descrição, ordem, is_completable, is_required, allows_multiple_responses
   - Seção de opções de resposta
 - [x] Drawer "Editar item"
-- [ ] Reordenação drag-and-drop dos itens
+- [x] Reordenação drag-and-drop dos itens
 - [x] Composable `useChecklistTemplates()` — `list`, `create()`, `update()`, `remove()`
-- [x] Composable `useChecklistItems(templateId)` — `list`, `create()`, `update()`, `remove()`
-- [ ] Reorder / `reorder()` para alinhar ao roadmap final
+- [x] Composable `useChecklistItems(templateId)` — `list`, `create()`, `update()`, `remove()`, `reorderItems()`
+- [x] Reorder / `reorder()` para alinhar ao roadmap final
 
-> Situação atual da fase 7: em andamento. O client já possui listagem de templates, CRUD de template, detalhe do template, CRUD de itens e vínculo no menu lateral. Ainda faltam a reordenação dos itens e o fechamento fino do contrato de navegação para alinhar 100% ao roadmap final.
+> Fase 7 concluída. Drag-and-drop nativo HTML5 implementado em `/checklists/templates/{templateId}` com `localItems`, `reorderItems()` nos composables e alerta de reordenamento.
 
 ### Campos de item
 
@@ -297,17 +298,19 @@ interface User {
 > **Referência**: `mecanix-app/app/(tabs)/checklists/`
 
 - [x] Página `/checklists` — seleção inicial de veículo:
-  - Busca local por placa, modelo e cliente
+  - Busca com debounce mínimo de 4 caracteres
+  - Paginação real via `GET /api/vehicles/paginated`
   - Lista com placa, modelo, cliente, última km e progresso de checklists
   - Botão "Iniciar checklist" por veículo com seletor de template
   - Botão "Histórico" por veículo
-- [ ] Evoluir `/checklists` para o contrato final do roadmap:
+- [x] Evoluir `/checklists` para o contrato final do roadmap:
   - Debounce com mínimo de 4 caracteres
   - Paginação real via `GET /api/vehicles/paginated`
   - Link explícito para detalhes do veículo na própria listagem
 - [x] Drawer seletor de template:
   - Lista templates disponíveis e inicia nova execução
-- [ ] Filtrar templates por tipo de veículo quando o payload do veículo expuser essa informação
+  - Filtra templates por tipo de veículo quando `vehicle_type_id` estiver disponível no payload
+- [x] Filtrar templates por tipo de veículo quando o payload do veículo expuser essa informação
 - [x] Página `/checklists/vehicles/{vehicleId}` — histórico de execuções do veículo:
   - Lista nome, data, executado por e status
   - Botão "Novo checklist"
@@ -320,55 +323,44 @@ interface User {
   - Exibe executado por
   - Exporta PDF
   - Permite excluir a execução
-- [ ] Fechar o detalhe `/checklists/{checklistId}` conforme o roadmap final:
-  - Campo de quilometragem no topo
-  - Agrupamento de itens, se houver categorias
-  - Indicação visual de item obrigatório não preenchido
+- [x] Fechar o detalhe `/checklists/{checklistId}` conforme o roadmap final:
+  - Campo de quilometragem no topo com registro via `POST /api/vehicle-mileage-history`
+  - Indicação visual de item obrigatório não preenchido (ring vermelho no card)
   - Modo somente leitura quando o checklist estiver concluído
 - [x] Composables para execução implementados:
-  - `useChecklistHistory(vehicleId)` para listagem do histórico
+  - `useVehicleChecklists(vehicleId)` para listagem do histórico (`useChecklistHistory` depreciado)
   - `useChecklistDetail(checklistId)` para detalhe da execução
-  - `useChecklistActions()` para criar execução, atualizar itens, atualizar notas, excluir e gerar PDF
-- [ ] Consolidar ou renomear a camada de composables para refletir o contrato final planejado de `useVehicleChecklists()`
+  - `useChecklistActions()` para criar execução, atualizar itens, atualizar notas, excluir, gerar PDF e registrar quilometragem
+- [x] Consolidar ou renomear a camada de composables para refletir o contrato final planejado de `useVehicleChecklists()`
 - [x] Geração de PDF implementada via `generatePdf(checklistId)`
 
-> Situação atual da fase 8: em andamento. O fluxo principal de execução já existe no client web, com seleção de veículo, criação de checklist, histórico por veículo, detalhe da execução, atualização de itens/notas e exportação de PDF. Ainda faltam a paginação/busca remota da seleção inicial, o filtro de templates por tipo de veículo e alguns comportamentos finais do detalhe para encerrar a fase conforme o roadmap original.
+> Fase 8 concluída. Paginação real com debounce min-4 implementada em `/checklists`, templates filtrados por tipo de veículo, campo de quilometragem no detalhe do checklist, modo somente leitura para checklists concluídos, indicador visual de itens obrigatórios não preenchidos e consolidação para `useVehicleChecklists()`.
 
 ---
 
 ## Fase 9 — Funcionários
 
-> **API**: `GET|POST /api/companies/{id}/employees` · `PATCH /api/companies/{id}/employees/{id}` · `PUT /api/companies/{id}/employees/{id}/password`  
+> **API**: `GET|POST /api/companies/{id}/employees` · `PATCH /api/companies/{id}/employees/{id}` · `DELETE /api/companies/{id}/employees/{id}` · `PUT /api/companies/{id}/employees/{id}/reset-password`  
 > **Referência**: `mecanix-app/app/(tabs)/manage/employees/` · `mecanix-core/docs/roadmaps/roadmap-v1.9-company-employees.md`
 
-- [ ] Página `/employees` — listagem:
+- [x] Página `/employees` — listagem:
   - Cards agrupados por empresa
-  - Cada card: nome, username, label do cargo (Gerente / Técnico / Personalizado), badge ativo/inativo
+  - Cada card: nome, username, label do cargo (Gerente / Técnico), badges ativo/inativo + aviso de troca de senha pendente
   - Botão "Novo funcionário"
-  - Ações: editar, desativar, redefinir senha
-- [ ] Drawer "Criar funcionário":
+  - Ações: editar, desativar (com confirmação), redefinir senha
+- [x] Drawer "Criar funcionário":
   - Select de empresa
-  - Campos: nome, username (validação: 3–50 chars, alfanumérico + `_` e `-`), senha temporária
-  - Seletor de cargo: Gerente / Técnico
-  - Grade de permissões editável por módulo/ação (modules: companies, customers, vehicles, checklist_templates, checklists, employees; actions: view, create, update, delete)
-  - Badge "Personalizado" ao divergir do preset
-- [ ] Drawer "Editar funcionário":
-  - Editar nome, username, cargo, permissões
-  - Confirmação ao trocar preset: "Vai redefinir todas as permissões para [Gerente/Técnico]. Confirmar?"
+  - Campos: nome, username (validação: 3–50 chars, letras minúsculas + números + `.`, `_`, `-`), senha temporária
+  - Seletor de cargo: Gerente / Técnico (com descrição de cada um)
+  - `must_change_password = true` automático no backend
+- [x] Drawer "Editar funcionário":
+  - Editar nome, username, cargo
   - Toggle ativo/inativo
-- [ ] Modal "Redefinir senha" (nova senha + confirmação)
-- [ ] Composable `useEmployees()` — `list`, `create()`, `update()`, `resetPassword()`
+- [x] Modal "Redefinir senha" (nova senha + confirmação; revoga tokens)
+- [x] Composable `useEmployees()` — `list`, `create()`, `update()`, `deactivateEmployee()`, `resetPassword()`
+- [ ] Grade de permissões granulares por módulo/ação (evolução futura, v2.0)
 
-### Grade de permissões
-
-| Módulo              | view   | create | update | delete |
-| ------------------- | ------ | ------ | ------ | ------ |
-| companies           | toggle | toggle | toggle | toggle |
-| customers           | toggle | toggle | toggle | toggle |
-| vehicles            | toggle | toggle | toggle | toggle |
-| checklist_templates | toggle | toggle | toggle | toggle |
-| checklists          | toggle | toggle | toggle | toggle |
-| employees           | toggle | toggle | toggle | toggle |
+> Fase 9 concluída. A grade de permissões granulares não foi implementada pois depende da evolução do backend descrita em `roadmap-v1.9-company-employees.md` e está planejada para v2.0.
 
 ---
 
@@ -377,14 +369,16 @@ interface User {
 > **API**: `GET /api/me` · `PUT /api/user` · `PUT /api/user/password`  
 > **Referência**: `mecanix-app/app/(tabs)/profile/`
 
-- [ ] Página `/profile`:
+- [x] Página `/profile`:
   - Avatar com iniciais do nome
   - Seção "Dados pessoais": editar nome e e-mail (form inline com save)
-  - Seção "Alterar senha": senha atual + nova senha + confirmação
-  - Seção "Aparência": toggle light / dark / system
-  - Botão "Sair" (logout com confirmação)
-- [ ] Nota informativa: "Para gerenciar sua assinatura, acesse o app Mecanix no Android."
-- [ ] Composable `useProfile()` — `updateInfo()`, `updatePassword()`
+  - Seção "Alterar senha": senha atual + nova senha (mín. 8 chars) + confirmação
+  - Seção "Aparência": toggle light / dark / system via `useColorMode()`
+  - Botão "Sair" com confirmação via `AppConfirm`
+- [x] Nota informativa: "Para gerenciar sua assinatura, acesse o app Mecanix no Android."
+- [x] Composable `useProfile()` — `updateInfo()`, `updatePassword()`
+
+> Fase 10 concluída.
 
 ---
 

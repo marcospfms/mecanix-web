@@ -1,6 +1,6 @@
 import { useAuth } from './useAuth'
 import { useAPI, useApiFetch } from './useAPI'
-import type { VehicleChecklist } from './useVehicles'
+import type { VehicleChecklist, VehicleMileageHistory } from './useVehicles'
 
 type ApiEnvelope<T> = {
   success: boolean;
@@ -20,6 +20,9 @@ export type ChecklistItemUpdatePayload = {
   selected_option_ids?: number[];
 }
 
+/**
+ * @deprecated Use `useVehicleChecklists` from `useVehicles` instead.
+ */
 export function useChecklistHistory(
   vehicleId: Ref<number | null> | ComputedRef<number | null>
 ) {
@@ -144,11 +147,67 @@ export function useChecklistActions() {
     return response.data
   }
 
+  const recordChecklistMileage = async (
+    vehicleId: number,
+    checklistId: number,
+    mileage: number
+  ): Promise<void> => {
+    await useApiFetch('/vehicle-mileage-history', {
+      method: 'POST',
+      body: {
+        vehicle_id: vehicleId,
+        mileage,
+        source_type: 'checklist',
+        source_id: checklistId,
+        notes: null
+      }
+    })
+  }
+
   return {
     createChecklist,
     deleteChecklist,
     updateChecklistItem,
     updateChecklistItemNotes,
-    generatePdf
+    generatePdf,
+    recordChecklistMileage
   }
+}
+
+export function useChecklistMileage(
+  checklistId: Ref<number | null> | ComputedRef<number | null>
+) {
+  const auth = useAuth()
+
+  const state = useAPI<
+    VehicleMileageHistory | null,
+    ApiEnvelope<VehicleMileageHistory>
+  >(
+    () => `/vehicle-checklists/${checklistId.value}/mileage-history`,
+    {
+      key: () => `checklists:${checklistId.value ?? 'none'}:mileage-history`,
+      immediate: false,
+      server: false,
+      default: (): VehicleMileageHistory | null => null,
+      transform: r => r.data ?? null
+    }
+  )
+
+  watch(
+    [() => auth.hydrated.value, () => auth.token.value, () => checklistId.value],
+    async ([hydrated, token, id]) => {
+      if (!hydrated || !id) return
+
+      if (!token) {
+        state.data.value = null
+        state.clear()
+        return
+      }
+
+      await state.refresh()
+    },
+    { immediate: true }
+  )
+
+  return state
 }

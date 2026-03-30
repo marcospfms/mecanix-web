@@ -21,11 +21,11 @@ const selectedTemplateId = ref<number | undefined>()
 
 const { data: vehicle, status: vehicleStatus } = useVehicle(vehicleId)
 const {
-  data: checklists,
+  checklists,
   status,
   error,
   refresh
-} = useChecklistHistory(vehicleId)
+} = useVehicleChecklists(vehicleId)
 const { templates, status: templatesStatus } = useChecklistTemplates()
 const { createChecklist, deleteChecklist } = useChecklistActions()
 
