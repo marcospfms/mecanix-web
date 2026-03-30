@@ -30,11 +30,71 @@ const {
   reorderItems
 } = useChecklistItems(templateId)
 const { types } = useVehicleTypes()
-const { deleteTemplate } = useChecklistTemplateActions()
+const { deleteTemplate, updateTemplate } = useChecklistTemplateActions()
 
+// ─── Edit template ───────────────────────────────────────────────────
+const ALL_VEHICLE_TYPES = '__all__'
+const templateFormOpen = ref(false)
+const templateFormSubmitting = ref(false)
+const templateFormName = ref('')
+const templateFormVehicleType = ref<string>(ALL_VEHICLE_TYPES)
+const templateFormErrors = ref<{ name?: string }>({})
+
+const vehicleTypeOptions = computed(() => [
+  { label: 'Todos os tipos', value: ALL_VEHICLE_TYPES },
+  ...types.value.map(type => ({
+    label: type.name,
+    value: String(type.id)
+  }))
+])
+
+const openEditTemplate = () => {
+  if (!template.value) return
+  templateFormName.value = template.value.name
+  templateFormVehicleType.value = template.value.vehicle_type_id
+    ? String(template.value.vehicle_type_id)
+    : ALL_VEHICLE_TYPES
+  templateFormErrors.value = {}
+  templateFormOpen.value = true
+}
+
+const handleTemplateUpdate = async () => {
+  if (templateFormSubmitting.value) return
+
+  templateFormErrors.value = {}
+  if (!templateFormName.value.trim()) {
+    templateFormErrors.value.name = 'Informe o nome do template.'
+    return
+  }
+
+  templateFormSubmitting.value = true
+  try {
+    await updateTemplate(template.value!.id, {
+      name: templateFormName.value,
+      vehicle_type_id: templateFormVehicleType.value === ALL_VEHICLE_TYPES
+        ? null
+        : Number(templateFormVehicleType.value)
+    })
+    toast.success({ title: 'Template atualizado', description: 'Os dados foram salvos com sucesso.' })
+    templateFormOpen.value = false
+    await refresh()
+  }
+  catch (err: unknown) {
+    toast.error({
+      title: 'Falha ao salvar',
+      description: getErrorMessage(err, 'Não foi possível atualizar o template.')
+    })
+  }
+  finally {
+    templateFormSubmitting.value = false
+  }
+}
+
+// ─── Items ───────────────────────────────────────────────────────────
 const itemFormOpen = ref(false)
 const itemFormMode = ref<ItemFormMode>('create')
 const itemFormSubmitting = ref(false)
+const itemPreviewOpen = ref(false)
 const itemPendingDeletion = ref<ChecklistItem | null>(null)
 const itemConfirmOpen = ref(false)
 const itemConfirmLoading = ref(false)
@@ -42,10 +102,9 @@ const templateConfirmOpen = ref(false)
 const templateConfirmLoading = ref(false)
 
 const editingItem = ref<ChecklistItem | null>(null)
+const previewingItem = ref<ChecklistItem | null>(null)
 const itemName = ref('')
 const itemDescription = ref('')
-const orderIndex = ref('')
-const isCompletable = ref(false)
 const allowsMultipleResponses = ref(false)
 const isRequired = ref(false)
 const options = ref<Array<{ id?: number; label: string; order_index: number }>>(
@@ -53,11 +112,14 @@ const options = ref<Array<{ id?: number; label: string; order_index: number }>>(
 )
 const itemFormErrors = ref<{ name?: string; options?: string }>({})
 
-// Cobre tanto 'idle' (antes da hidratação) quanto 'pending' (durante fetch)
+// Mostra AppLoading enquanto template OU itens ainda não estão prontos
 const isLoading = computed(
   () =>
-    (['idle', 'pending'].includes(status.value) && !template.value)
-    || (['idle', 'pending'].includes(itemsStatus.value) && items.value.length === 0 && !template.value)
+    ['idle', 'pending'].includes(status.value)
+    || (['idle', 'pending'].includes(itemsStatus.value) && !template.value)
+)
+const isItemsLoading = computed(
+  () => ['idle', 'pending'].includes(itemsStatus.value)
 )
 const isDataRefreshing = computed(
   () => manualRefreshing.value && !!template.value
@@ -73,6 +135,12 @@ const itemFormDescription = computed(() =>
     ? 'Adicione um novo item ao template.'
     : 'Atualize os dados do item selecionado.'
 )
+const previewTypeLabel = computed(() => {
+  if (!previewingItem.value) return '-'
+  if (previewingItem.value.is_completable) return 'Com marcação'
+  if (previewingItem.value.allows_multiple_responses) return 'Múltipla escolha'
+  return 'Opção única'
+})
 
 const resolveVehicleTypeName = (value?: number | null) => {
   if (!value) {
@@ -87,8 +155,6 @@ const resolveVehicleTypeName = (value?: number | null) => {
 const resetItemForm = () => {
   itemName.value = ''
   itemDescription.value = ''
-  orderIndex.value = ''
-  isCompletable.value = false
   allowsMultipleResponses.value = false
   isRequired.value = false
   options.value = []
@@ -123,8 +189,6 @@ const openEdit = (item: ChecklistItem) => {
   editingItem.value = item
   itemName.value = item.name
   itemDescription.value = item.description ?? ''
-  orderIndex.value = String(item.order_index)
-  isCompletable.value = item.is_completable
   allowsMultipleResponses.value = item.allows_multiple_responses
   isRequired.value = item.is_required
   options.value = (item.options ?? []).map(option => ({
@@ -135,6 +199,11 @@ const openEdit = (item: ChecklistItem) => {
   itemFormOpen.value = true
 }
 
+const openPreview = (item: ChecklistItem) => {
+  previewingItem.value = item
+  itemPreviewOpen.value = true
+}
+
 const validateItemForm = () => {
   const errors: { name?: string; options?: string } = {}
 
@@ -142,11 +211,10 @@ const validateItemForm = () => {
     errors.name = 'Informe o nome do item.'
   }
 
-  const hasBlankOption = options.value.some(
-    option => option.label.trim().length === 0
-  )
-  if (hasBlankOption) {
-    errors.options = 'Preencha ou remova as opções vazias.'
+  if (options.value.length === 0) {
+    errors.options = 'Adicione pelo menos uma opção de resposta.'
+  } else if (options.value.some(option => option.label.trim().length === 0)) {
+    errors.options = 'Preencha os textos de todas as opções.'
   }
 
   itemFormErrors.value = errors
@@ -162,14 +230,13 @@ const handleItemSubmit = async () => {
 
   try {
     const payload = {
-      name: itemName.value,
-      description: itemDescription.value,
-      order_index: orderIndex.value.trim() ? Number(orderIndex.value) : null,
-      is_completable: isCompletable.value,
+      name: itemName.value.trim(),
+      description: itemDescription.value.trim() || null,
+      is_completable: false,
       allows_multiple_responses: allowsMultipleResponses.value,
       is_required: isRequired.value,
       options: options.value.map((option, index) => ({
-        label: option.label,
+        label: option.label.trim(),
         order_index: index
       }))
     }
@@ -353,11 +420,13 @@ const onDrop = async (dropIndex: number) => {
           color="neutral"
           variant="soft"
           icon="i-lucide-refresh-cw"
-          size="xl"
+          class="self-start sm:self-auto"
           :loading="isDataRefreshing"
           aria-label="Atualizar template"
           @click="handleRefresh"
-        />
+        >
+          Atualizar
+        </UButton>
       </div>
     </section>
 
@@ -384,7 +453,7 @@ const onDrop = async (dropIndex: number) => {
       <UCard class="rounded-2xl border-default">
         <div class="space-y-5">
           <!-- Header do card -->
-          <div class="flex items-start justify-between gap-4">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div class="flex items-center gap-3">
               <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                 <UIcon name="i-lucide-clipboard-list" class="size-5 text-primary" />
@@ -399,20 +468,29 @@ const onDrop = async (dropIndex: number) => {
               </div>
             </div>
 
-            <div class="flex shrink-0 gap-2">
+            <div class="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
               <UButton
                 color="primary"
                 icon="i-lucide-plus"
-                size="sm"
+                class="w-full justify-center"
                 @click="openCreate"
               >
                 Novo item
               </UButton>
               <UButton
+                color="neutral"
+                variant="soft"
+                icon="i-lucide-pencil"
+                class="w-full justify-center"
+                @click="openEditTemplate"
+              >
+                Editar
+              </UButton>
+              <UButton
                 color="error"
                 variant="soft"
                 icon="i-lucide-trash"
-                size="sm"
+                class="w-full justify-center"
                 @click="templateConfirmOpen = true"
               >
                 Excluir
@@ -421,7 +499,7 @@ const onDrop = async (dropIndex: number) => {
           </div>
 
           <!-- Info blocks (padrão infoRow/infoBlock do app mobile) -->
-          <div class="grid grid-cols-3 gap-3 rounded-xl border border-default bg-muted/20 p-4">
+          <div class="grid gap-3 rounded-xl border border-default bg-muted/20 p-4 sm:grid-cols-3">
             <div>
               <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
                 Tipo de veículo
@@ -468,20 +546,27 @@ const onDrop = async (dropIndex: number) => {
           </div>
         </div>
 
-        <AppEmpty
-          v-if="!hasItems"
-          title="Nenhum item cadastrado"
-          description="Adicione o primeiro item para começar a estruturar este template."
-          icon="i-lucide-list-checks"
-        >
-          <div class="pt-2">
-            <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
-              Criar primeiro item
-            </UButton>
-          </div>
-        </AppEmpty>
+        <!-- Carregando itens (template já visível) -->
+        <div v-if="isItemsLoading" class="flex items-center gap-2 py-6 text-sm text-toned">
+          <UIcon name="i-lucide-loader" class="size-4 animate-spin" />
+          <span>Carregando itens…</span>
+        </div>
 
-        <div v-else class="grid gap-3">
+        <template v-else>
+          <AppEmpty
+            v-if="!hasItems"
+            title="Nenhum item cadastrado"
+            description="Adicione o primeiro item para começar a estruturar este template."
+            icon="i-lucide-list-checks"
+          >
+            <div class="pt-2">
+              <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
+                Criar primeiro item
+              </UButton>
+            </div>
+          </AppEmpty>
+
+          <div v-else class="grid gap-3">
           <p class="flex items-center gap-1 text-xs text-toned">
             <UIcon name="i-lucide-grip-vertical" class="size-3.5" />
             Arraste os itens para reordenar
@@ -501,14 +586,11 @@ const onDrop = async (dropIndex: number) => {
             @dragend="onDragEnd"
           >
             <div class="space-y-3">
-              <!-- Linha principal: ordem, nome, ações -->
+              <!-- Linha principal: nome, ações -->
               <div class="flex items-start gap-3">
-                <!-- Alça de arrasto + Índice -->
+                <!-- Alça de arrasto -->
                 <div class="flex items-center gap-1.5">
                   <UIcon name="i-lucide-grip-vertical" class="size-4 shrink-0 text-muted" />
-                  <div class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-default bg-muted/40 text-xs font-semibold text-toned">
-                    {{ item.order_index }}
-                  </div>
                 </div>
 
                 <!-- Conteúdo -->
@@ -517,12 +599,6 @@ const onDrop = async (dropIndex: number) => {
                     <p class="text-sm font-semibold text-highlighted">
                       {{ item.name }}
                     </p>
-                    <span
-                      v-if="item.is_required"
-                      class="rounded-full bg-error/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-error"
-                    >
-                      Obrigatório
-                    </span>
                   </div>
                   <p v-if="item.description" class="text-sm leading-5 text-toned">
                     {{ item.description }}
@@ -531,10 +607,10 @@ const onDrop = async (dropIndex: number) => {
                   <!-- Tags de comportamento -->
                   <div class="flex flex-wrap gap-1.5 pt-0.5">
                     <span
-                      class="rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em]"
-                      :class="item.is_completable ? 'bg-primary/10 text-primary' : 'bg-muted text-toned'"
+                      v-if="item.is_completable"
+                      class="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary"
                     >
-                      {{ item.is_completable ? 'Completável' : 'Sem check' }}
+                      Completável
                     </span>
                     <span
                       v-if="item.allows_multiple_responses"
@@ -547,6 +623,14 @@ const onDrop = async (dropIndex: number) => {
 
                 <!-- Ações -->
                 <div class="flex shrink-0 gap-1.5">
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-eye"
+                    size="sm"
+                    aria-label="Visualizar item"
+                    @click="openPreview(item)"
+                  />
                   <UButton
                     color="neutral"
                     variant="ghost"
@@ -568,13 +652,15 @@ const onDrop = async (dropIndex: number) => {
 
               <!-- Opções de resposta -->
               <div
-                v-if="(item.options?.length ?? 0) > 0"
-                class="ml-11 rounded-xl border border-default bg-muted/20 px-3 py-2.5"
+                class="rounded-xl border border-default bg-muted/20 px-3 py-2.5"
               >
                 <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
                   Opções
                 </p>
-                <div class="flex flex-wrap gap-1.5">
+                <div
+                  v-if="(item.options?.length ?? 0) > 0"
+                  class="flex flex-wrap gap-1.5"
+                >
                   <span
                     v-for="option in item.options"
                     :key="option.id"
@@ -583,12 +669,180 @@ const onDrop = async (dropIndex: number) => {
                     {{ option.label }}
                   </span>
                 </div>
+                <div
+                  v-else
+                  class="rounded-xl border border-dashed border-default bg-default px-3 py-2.5 text-sm text-toned"
+                >
+                  Este item ainda não tem nenhuma opção cadastrada.
+                </div>
               </div>
             </div>
           </UCard>
-        </div>
+          </div>
+        </template>
       </section>
     </template>
+
+    <!-- Fallback: template não encontrado (evita tela em branco em casos extremos) -->
+    <UAlert
+      v-else
+      color="warning"
+      variant="soft"
+      icon="i-lucide-file-question"
+      title="Template não encontrado"
+      description="Verifique se o template existe ou volte para a lista."
+    />
+
+    <USlideover
+      v-model:open="itemPreviewOpen"
+      side="bottom"
+      :title="previewingItem?.name || 'Detalhes do item'"
+      description="Resumo do comportamento e das opções deste item."
+      :ui="{
+        content: 'max-h-[85vh] rounded-t-3xl',
+        body: 'px-4 py-4 sm:px-5 sm:py-5'
+      }"
+    >
+      <template #body>
+        <div
+          v-if="previewingItem"
+          class="space-y-4"
+        >
+          <div
+            v-if="previewingItem.description"
+            class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
+          >
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+              Descrição
+            </p>
+            <p class="mt-2 text-sm leading-6 text-toned">
+              {{ previewingItem.description }}
+            </p>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+                Posição na lista
+              </p>
+              <p class="mt-1 text-sm font-medium text-highlighted">
+                {{ previewingItem.order_index }}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+                Obrigatório
+              </p>
+              <p class="mt-1 text-sm font-medium text-highlighted">
+                {{ previewingItem.is_required ? 'Sim' : 'Não' }}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+                Resposta
+              </p>
+              <p class="mt-1 text-sm font-medium text-highlighted">
+                {{ previewTypeLabel }}
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-default bg-muted/20 px-4 py-3">
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                Opções
+              </p>
+              <span class="text-xs text-toned">
+                {{ previewingItem.options?.length ?? 0 }} opções
+              </span>
+            </div>
+
+            <div
+              v-if="(previewingItem.options?.length ?? 0) > 0"
+              class="mt-3 grid gap-2"
+            >
+              <div
+                v-for="option in previewingItem.options"
+                :key="option.id"
+                class="rounded-xl border border-default bg-default px-3 py-2.5 text-sm text-highlighted"
+              >
+                {{ option.label }}
+              </div>
+            </div>
+
+            <p
+              v-else
+              class="mt-3 text-sm text-toned"
+            >
+              Nenhuma opção cadastrada.
+            </p>
+          </div>
+        </div>
+      </template>
+    </USlideover>
+
+    <!-- Formulário de edição do template -->
+    <USlideover
+      v-model:open="templateFormOpen"
+      side="right"
+      title="Editar template"
+      description="Atualize o nome e o tipo de veículo do template."
+      :ui="{
+        body: 'px-3 py-4 sm:px-4 sm:py-5',
+        footer: 'justify-end px-3 sm:px-4'
+      }"
+    >
+      <template #body>
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              Nome
+            </label>
+            <UInput
+              v-model="templateFormName"
+              placeholder="Ex.: Inspeção completa"
+              size="xl"
+              class="w-full"
+              :maxlength="255"
+              @update:model-value="templateFormErrors.name = undefined"
+            />
+            <p v-if="templateFormErrors.name" class="text-sm text-error">
+              {{ templateFormErrors.name }}
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              Tipo de veículo
+            </label>
+            <USelect
+              v-model="templateFormVehicleType"
+              :items="vehicleTypeOptions"
+              size="xl"
+              class="w-full"
+            />
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <UButton
+          color="neutral"
+          variant="soft"
+          @click="templateFormOpen = false"
+        >
+          Cancelar
+        </UButton>
+        <UButton
+          color="primary"
+          :loading="templateFormSubmitting"
+          icon="i-lucide-save"
+          @click="handleTemplateUpdate"
+        >
+          Salvar
+        </UButton>
+      </template>
+    </USlideover>
 
     <!-- Formulário de item (slideover) -->
     <USlideover
@@ -631,19 +885,6 @@ const onDrop = async (dropIndex: number) => {
             />
           </div>
 
-          <div class="space-y-2">
-            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-              Ordem
-            </label>
-            <UInput
-              v-model="orderIndex"
-              placeholder="Ex.: 0"
-              size="xl"
-              class="w-full"
-              inputmode="numeric"
-            />
-          </div>
-
           <div class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4">
             <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               Comportamento
@@ -656,15 +897,6 @@ const onDrop = async (dropIndex: number) => {
                 class="size-4 rounded border-default accent-primary"
               >
               Item obrigatório para concluir o checklist
-            </label>
-
-            <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
-              <input
-                v-model="isCompletable"
-                type="checkbox"
-                class="size-4 rounded border-default accent-primary"
-              >
-              Permite marcação de conclusão
             </label>
 
             <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
@@ -699,9 +931,9 @@ const onDrop = async (dropIndex: number) => {
 
             <div
               v-if="options.length === 0"
-              class="rounded-2xl border border-dashed border-default px-4 py-6 text-center text-sm text-toned"
+              class="rounded-2xl border border-dashed border-error/40 px-4 py-6 text-center text-sm text-toned"
             >
-              Sem opções. Use para itens com respostas fechadas.
+              Adicione pelo menos uma opção de resposta.
             </div>
 
             <div v-else class="space-y-2">
