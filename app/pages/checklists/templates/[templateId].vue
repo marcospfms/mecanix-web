@@ -52,15 +52,17 @@ const options = ref<Array<{ id?: number; label: string; order_index: number }>>(
 )
 const itemFormErrors = ref<{ name?: string; options?: string }>({})
 
+// Cobre tanto 'idle' (antes da hidratação) quanto 'pending' (durante fetch)
 const isLoading = computed(
   () =>
-    (status.value === 'pending' && !template.value)
-    || (itemsStatus.value === 'pending' && items.value.length === 0)
+    (['idle', 'pending'].includes(status.value) && !template.value)
+    || (['idle', 'pending'].includes(itemsStatus.value) && items.value.length === 0 && !template.value)
 )
 const isDataRefreshing = computed(
   () => manualRefreshing.value && !!template.value
 )
 const hasItems = computed(() => items.value.length > 0)
+const itemCount = computed(() => items.value.length)
 
 const itemFormTitle = computed(() =>
   itemFormMode.value === 'create' ? 'Novo item' : 'Editar item'
@@ -274,32 +276,24 @@ const handleRefresh = async () => {
 
 <template>
   <div class="space-y-5 sm:space-y-6">
+    <!-- Cabeçalho da página -->
     <section class="space-y-3">
       <p class="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-        Checklists
+        Templates de checklist
       </p>
 
-      <div
-        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
-      >
-        <div class="space-y-2">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div class="space-y-1.5">
           <NuxtLink
             :to="{ name: 'checklists-templates' }"
             class="inline-flex items-center gap-1.5 text-sm text-toned transition-colors hover:text-highlighted"
           >
-            <UIcon
-              name="i-lucide-arrow-left"
-              class="size-4"
-            />
+            <UIcon name="i-lucide-arrow-left" class="size-4" />
             Templates
           </NuxtLink>
           <h1 class="text-3xl font-semibold tracking-tight text-highlighted">
-            {{ template?.name || 'Itens do template' }}
+            {{ template?.name || 'Detalhes do template' }}
           </h1>
-          <p class="max-w-2xl text-sm leading-6 text-toned">
-            Gerencie os itens e as opções de resposta deste template de
-            checklist.
-          </p>
         </div>
 
         <UButton
@@ -307,18 +301,21 @@ const handleRefresh = async () => {
           variant="soft"
           icon="i-lucide-refresh-cw"
           size="xl"
+          :loading="isDataRefreshing"
           aria-label="Atualizar template"
           @click="handleRefresh"
         />
       </div>
     </section>
 
+    <!-- Estado de carregamento inicial -->
     <AppLoading
-      v-if="isLoading || isDataRefreshing"
+      v-if="isLoading"
       title="Carregando template"
       description="Buscando os dados do template e seus itens."
     />
 
+    <!-- Erro -->
     <UAlert
       v-else-if="error || itemsError"
       color="error"
@@ -328,77 +325,94 @@ const handleRefresh = async () => {
       description="Atualize a página ou tente novamente em instantes."
     />
 
+    <!-- Conteúdo principal -->
     <template v-else-if="template">
+      <!-- Card de resumo do template (inspirado no infoCard do app) -->
       <UCard class="rounded-2xl border-default">
-        <div
-          class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-        >
-          <div class="space-y-3">
-            <div class="flex flex-wrap items-center gap-2">
-              <span
-                class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary"
-              >
-                {{ resolveVehicleTypeName(template.vehicle_type_id) }}
-              </span>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
+        <div class="space-y-5">
+          <!-- Header do card -->
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <UIcon name="i-lucide-clipboard-list" class="size-5 text-primary" />
+              </div>
               <div>
-                <p
-                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                >
-                  Nome
-                </p>
-                <p class="mt-1 text-base text-highlighted">
+                <p class="text-base font-semibold text-highlighted">
                   {{ template.name }}
                 </p>
+                <p class="text-xs text-toned">
+                  ID #{{ template.id }}
+                </p>
               </div>
+            </div>
 
-              <div>
-                <p
-                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                >
-                  Atualizado em
-                </p>
-                <p class="mt-1 text-base text-highlighted">
-                  <NuxtTime
-                    :datetime="template.updated_at"
-                    year="numeric"
-                    month="2-digit"
-                    day="2-digit"
-                    hour="2-digit"
-                    minute="2-digit"
-                  />
-                </p>
-              </div>
+            <div class="flex shrink-0 gap-2">
+              <UButton
+                color="primary"
+                icon="i-lucide-plus"
+                size="sm"
+                @click="openCreate"
+              >
+                Novo item
+              </UButton>
+              <UButton
+                color="error"
+                variant="soft"
+                icon="i-lucide-trash"
+                size="sm"
+                @click="templateConfirmOpen = true"
+              >
+                Excluir
+              </UButton>
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-2 sm:justify-end">
-            <UButton
-              color="primary"
-              icon="i-lucide-plus"
-              @click="openCreate"
-            >
-              Novo item
-            </UButton>
-            <UButton
-              color="error"
-              variant="soft"
-              icon="i-lucide-trash"
-              @click="templateConfirmOpen = true"
-            >
-              Excluir template
-            </UButton>
+          <!-- Info blocks (padrão infoRow/infoBlock do app mobile) -->
+          <div class="grid grid-cols-3 gap-3 rounded-xl border border-default bg-muted/20 p-4">
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+                Tipo de veículo
+              </p>
+              <p class="mt-1 text-sm font-medium text-highlighted">
+                {{ resolveVehicleTypeName(template.vehicle_type_id) }}
+              </p>
+            </div>
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+                Itens
+              </p>
+              <p class="mt-1 text-sm font-medium text-highlighted">
+                {{ itemCount }}
+              </p>
+            </div>
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+                Atualizado
+              </p>
+              <p class="mt-1 text-sm font-medium text-highlighted">
+                <NuxtTime
+                  :datetime="template.updated_at"
+                  year="numeric"
+                  month="2-digit"
+                  day="2-digit"
+                />
+              </p>
+            </div>
           </div>
         </div>
       </UCard>
 
+      <!-- Seção de itens -->
       <section class="space-y-3">
         <div class="flex items-center justify-between gap-3">
-          <h2 class="text-lg font-semibold text-highlighted">
-            Itens do template
-          </h2>
+          <div>
+            <h2 class="text-lg font-semibold text-highlighted">
+              Itens do checklist
+            </h2>
+            <p class="text-sm text-toned">
+              Gerencie os pontos que devem ser verificados durante a inspeção.
+            </p>
+          </div>
         </div>
 
         <AppEmpty
@@ -408,120 +422,94 @@ const handleRefresh = async () => {
           icon="i-lucide-list-checks"
         >
           <div class="pt-2">
-            <UButton
-              color="primary"
-              icon="i-lucide-plus"
-              @click="openCreate"
-            >
+            <UButton color="primary" icon="i-lucide-plus" @click="openCreate">
               Criar primeiro item
             </UButton>
           </div>
         </AppEmpty>
 
-        <div
-          v-else
-          class="grid gap-3"
-        >
+        <div v-else class="grid gap-3">
           <UCard
             v-for="item in items"
             :key="item.id"
             class="rounded-2xl border-default"
           >
-            <div class="space-y-4">
-              <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
-              >
-                <div class="space-y-2">
+            <div class="space-y-3">
+              <!-- Linha principal: ordem, nome, ações -->
+              <div class="flex items-start gap-3">
+                <!-- Índice -->
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-default bg-muted/40 text-xs font-semibold text-toned">
+                  {{ item.order_index }}
+                </div>
+
+                <!-- Conteúdo -->
+                <div class="min-w-0 flex-1 space-y-1">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span
-                      class="rounded-full border border-default px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-toned"
-                    >
-                      #{{ item.order_index }}
-                    </span>
-                    <p class="text-base font-semibold text-highlighted">
+                    <p class="text-sm font-semibold text-highlighted">
                       {{ item.name }}
                     </p>
+                    <span
+                      v-if="item.is_required"
+                      class="rounded-full bg-error/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-error"
+                    >
+                      Obrigatório
+                    </span>
                   </div>
-
-                  <p
-                    v-if="item.description"
-                    class="text-sm leading-6 text-toned"
-                  >
+                  <p v-if="item.description" class="text-sm leading-5 text-toned">
                     {{ item.description }}
                   </p>
 
-                  <div class="flex flex-wrap gap-2 text-xs">
+                  <!-- Tags de comportamento -->
+                  <div class="flex flex-wrap gap-1.5 pt-0.5">
                     <span
-                      class="rounded-full px-2.5 py-1 font-semibold uppercase tracking-[0.14em]"
-                      :class="
-                        item.is_required
-                          ? 'bg-error/10 text-error'
-                          : 'bg-muted text-toned'
-                      "
-                    >
-                      {{ item.is_required ? 'Obrigatório' : 'Opcional' }}
-                    </span>
-                    <span
-                      class="rounded-full px-2.5 py-1 font-semibold uppercase tracking-[0.14em]"
-                      :class="
-                        item.is_completable
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-muted text-toned'
-                      "
+                      class="rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em]"
+                      :class="item.is_completable ? 'bg-primary/10 text-primary' : 'bg-muted text-toned'"
                     >
                       {{ item.is_completable ? 'Completável' : 'Sem check' }}
                     </span>
                     <span
-                      class="rounded-full px-2.5 py-1 font-semibold uppercase tracking-[0.14em]"
-                      :class="
-                        item.allows_multiple_responses
-                          ? 'bg-warning/10 text-warning'
-                          : 'bg-muted text-toned'
-                      "
+                      v-if="item.allows_multiple_responses"
+                      class="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-warning"
                     >
-                      {{
-                        item.allows_multiple_responses
-                          ? 'Múltipla escolha'
-                          : 'Resposta única'
-                      }}
+                      Múltipla escolha
                     </span>
                   </div>
                 </div>
 
-                <div class="flex gap-2 sm:justify-end">
+                <!-- Ações -->
+                <div class="flex shrink-0 gap-1.5">
                   <UButton
                     color="neutral"
-                    variant="soft"
+                    variant="ghost"
                     icon="i-lucide-pencil"
+                    size="sm"
+                    aria-label="Editar item"
                     @click="openEdit(item)"
-                  >
-                    Editar
-                  </UButton>
+                  />
                   <UButton
                     color="error"
-                    variant="soft"
+                    variant="ghost"
                     icon="i-lucide-trash"
+                    size="sm"
+                    aria-label="Excluir item"
                     @click="askItemDelete(item)"
-                  >
-                    Excluir
-                  </UButton>
+                  />
                 </div>
               </div>
 
+              <!-- Opções de resposta -->
               <div
                 v-if="(item.options?.length ?? 0) > 0"
-                class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
+                class="ml-11 rounded-xl border border-default bg-muted/20 px-3 py-2.5"
               >
-                <p
-                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                >
-                  Opções de resposta
+                <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-toned">
+                  Opções
                 </p>
-                <div class="mt-3 flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-1.5">
                   <span
                     v-for="option in item.options"
                     :key="option.id"
-                    class="rounded-full border border-default bg-default px-3 py-1.5 text-sm text-toned"
+                    class="rounded-full border border-default bg-default px-2.5 py-1 text-xs text-toned"
                   >
                     {{ option.label }}
                   </span>
@@ -533,6 +521,7 @@ const handleRefresh = async () => {
       </section>
     </template>
 
+    <!-- Formulário de item (slideover) -->
     <USlideover
       v-model:open="itemFormOpen"
       side="right"
@@ -546,9 +535,7 @@ const handleRefresh = async () => {
       <template #body>
         <div class="space-y-4">
           <div class="space-y-2">
-            <label
-              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-            >
+            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               Nome
             </label>
             <UInput
@@ -558,32 +545,25 @@ const handleRefresh = async () => {
               class="w-full"
               :maxlength="255"
             />
-            <p
-              v-if="itemFormErrors.name"
-              class="text-sm text-error"
-            >
+            <p v-if="itemFormErrors.name" class="text-sm text-error">
               {{ itemFormErrors.name }}
             </p>
           </div>
 
           <div class="space-y-2">
-            <label
-              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-            >
+            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               Descrição
             </label>
             <UTextarea
               v-model="itemDescription"
               placeholder="Opcional"
               class="w-full"
-              :rows="4"
+              :rows="3"
             />
           </div>
 
           <div class="space-y-2">
-            <label
-              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-            >
+            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               Ordem
             </label>
             <UInput
@@ -595,38 +575,34 @@ const handleRefresh = async () => {
             />
           </div>
 
-          <div
-            class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4"
-          >
-            <label
-              class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-            >
+          <div class="space-y-3 rounded-2xl border border-default bg-muted/20 p-4">
+            <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
               Comportamento
             </label>
 
-            <label class="flex items-center gap-3 text-sm text-highlighted">
+            <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
               <input
                 v-model="isRequired"
                 type="checkbox"
-                class="size-4 rounded border-default"
+                class="size-4 rounded border-default accent-primary"
               >
-              Item obrigatório
+              Item obrigatório para concluir o checklist
             </label>
 
-            <label class="flex items-center gap-3 text-sm text-highlighted">
+            <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
               <input
                 v-model="isCompletable"
                 type="checkbox"
-                class="size-4 rounded border-default"
+                class="size-4 rounded border-default accent-primary"
               >
               Permite marcação de conclusão
             </label>
 
-            <label class="flex items-center gap-3 text-sm text-highlighted">
+            <label class="flex cursor-pointer items-center gap-3 text-sm text-highlighted">
               <input
                 v-model="allowsMultipleResponses"
                 type="checkbox"
-                class="size-4 rounded border-default"
+                class="size-4 rounded border-default accent-primary"
               >
               Permite múltiplas respostas
             </label>
@@ -634,9 +610,7 @@ const handleRefresh = async () => {
 
           <div class="space-y-3">
             <div class="flex items-center justify-between gap-3">
-              <label
-                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-              >
+              <label class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary">
                 Opções de resposta
               </label>
               <UButton
@@ -650,43 +624,35 @@ const handleRefresh = async () => {
               </UButton>
             </div>
 
-            <p
-              v-if="itemFormErrors.options"
-              class="text-sm text-error"
-            >
+            <p v-if="itemFormErrors.options" class="text-sm text-error">
               {{ itemFormErrors.options }}
             </p>
 
             <div
               v-if="options.length === 0"
-              class="rounded-2xl border border-dashed border-default px-4 py-6 text-sm text-toned"
+              class="rounded-2xl border border-dashed border-default px-4 py-6 text-center text-sm text-toned"
             >
-              Sem opções configuradas. Use isso para itens com resposta fechada.
+              Sem opções. Use para itens com respostas fechadas.
             </div>
 
-            <div
-              v-else
-              class="space-y-3"
-            >
+            <div v-else class="space-y-2">
               <div
                 v-for="(option, index) in options"
                 :key="`${index}-${option.id ?? 'new'}`"
-                class="rounded-2xl border border-default bg-muted/20 p-4"
+                class="flex items-center gap-2"
               >
-                <div class="flex items-start gap-3">
-                  <UInput
-                    v-model="option.label"
-                    placeholder="Ex.: Aprovado"
-                    size="lg"
-                    class="flex-1"
-                  />
-                  <UButton
-                    color="error"
-                    variant="soft"
-                    icon="i-lucide-trash"
-                    @click="removeOption(index)"
-                  />
-                </div>
+                <UInput
+                  v-model="option.label"
+                  placeholder="Ex.: Aprovado"
+                  size="lg"
+                  class="flex-1"
+                />
+                <UButton
+                  color="error"
+                  variant="soft"
+                  icon="i-lucide-trash"
+                  @click="removeOption(index)"
+                />
               </div>
             </div>
           </div>
@@ -694,18 +660,10 @@ const handleRefresh = async () => {
       </template>
 
       <template #footer>
-        <UButton
-          color="neutral"
-          variant="ghost"
-          @click="itemFormOpen = false"
-        >
+        <UButton color="neutral" variant="ghost" @click="itemFormOpen = false">
           Cancelar
         </UButton>
-        <UButton
-          color="primary"
-          :loading="itemFormSubmitting"
-          @click="handleItemSubmit"
-        >
+        <UButton color="primary" :loading="itemFormSubmitting" @click="handleItemSubmit">
           {{ itemFormMode === 'create' ? 'Criar item' : 'Salvar alterações' }}
         </UButton>
       </template>
@@ -716,7 +674,7 @@ const handleRefresh = async () => {
       title="Excluir item"
       :description="
         itemPendingDeletion
-          ? `Você está removendo ${itemPendingDeletion.name}. Esta ação não pode ser desfeita.`
+          ? `Você está removendo '${itemPendingDeletion.name}'. Esta ação não pode ser desfeita.`
           : 'Esta ação não pode ser desfeita.'
       "
       confirm-label="Excluir"
@@ -729,7 +687,7 @@ const handleRefresh = async () => {
       title="Excluir template"
       :description="
         template
-          ? `Você está removendo ${template.name}. Esta ação não pode ser desfeita.`
+          ? `Você está removendo '${template.name}'. Esta ação não pode ser desfeita.`
           : 'Esta ação não pode ser desfeita.'
       "
       confirm-label="Excluir"

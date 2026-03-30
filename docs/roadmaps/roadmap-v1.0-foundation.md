@@ -257,7 +257,11 @@ interface User {
 
 ### Itens do template
 
-- [x] Página `/checklists/{templateId}` — detalhe + itens:
+- [x] Página `/checklists/templates/{templateId}` — detalhe + itens (redesenhada com card de resumo, infoBlocks tipo/contagem/data, itens compactos com badge obrigatório, ações inline, opções aninhadas)
+  - Lista de itens ordenada por `order_index`
+  - Ações por item: editar, excluir (com confirmação)
+  - Opções de resposta renderizadas no card do item
+  - Exclusão do template a partir do detalhe
   - Lista de itens ordenada por `order_index`
   - Ações por item: editar, excluir (com confirmação)
   - Opções de resposta renderizadas no card do item
