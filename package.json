@@ -1,6 +1,7 @@
 {
   "name": "mecanix-client",
   "private": true,
+  "packageManager": "pnpm@10.16.1",
   "type": "module",
   "scripts": {
     "build": "nuxt build",
