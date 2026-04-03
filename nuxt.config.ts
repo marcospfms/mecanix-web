@@ -20,8 +20,8 @@ export default defineNuxtConfig({
       apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:8000/api',
       appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3000',
       googleClientId:
-        process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID ||
-        process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID_WEB ||
+        process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID
+        || process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID_WEB
         ''
     }
   },
