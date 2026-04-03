@@ -22,7 +22,7 @@ export default defineNuxtConfig({
       googleClientId:
         process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID
         || process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID_WEB
-        ''
+        || ''
     }
   },
 
