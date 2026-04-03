@@ -15,6 +15,7 @@ export type Vehicle = {
   model: string | null;
   model_year: number | null;
   color: string | null;
+  vehicle_type_id?: number | null;
   latest_mileage?: number | null;
   checklists_total?: number | null;
   checklists_done?: number | null;
@@ -32,6 +33,14 @@ export type VehicleMileageHistory = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  checklist?: {
+    id: number;
+    name: string;
+    is_completed: boolean;
+    completed_at: string | null;
+    created_at: string;
+    executed_by: { id: number; name: string } | null;
+  } | null;
 }
 
 export type VehicleChecklistExecutor = {
@@ -445,6 +454,110 @@ export function useMileageHistory(
   }
 }
 
+type PaginatedVehiclesResponse = {
+  items: Vehicle[];
+  next_cursor: string | null;
+  has_more: boolean;
+  per_page: number;
+}
+
+type PaginatedEnvelope = {
+  success: boolean;
+  data: PaginatedVehiclesResponse;
+}
+
+export function useVehiclesPaginated() {
+  const auth = useAuth()
+
+  const search = ref('')
+  const vehicles = ref<Vehicle[]>([])
+  const nextCursor = ref<string | null>(null)
+  const hasMore = ref(false)
+  const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const error = ref<unknown>(null)
+  const isLoadingMore = ref(false)
+
+  const fetchPage = async (cursor: string | null = null, append = false) => {
+    if (!auth.token.value) {
+      vehicles.value = []
+      status.value = 'idle'
+      return
+    }
+
+    const params: Record<string, string> = { per_page: '20' }
+    if (search.value.trim()) params.q = search.value.trim()
+    if (cursor) params.cursor = cursor
+
+    const query = new URLSearchParams(params).toString()
+
+    try {
+      const response = await useApiFetch<PaginatedEnvelope>(
+        `/vehicles/paginated?${query}`
+      )
+      const page = response.data
+
+      if (append) {
+        vehicles.value = [...vehicles.value, ...(page.items ?? [])]
+      } else {
+        vehicles.value = page.items ?? []
+      }
+
+      nextCursor.value = page.next_cursor ?? null
+      hasMore.value = page.has_more ?? !!page.next_cursor
+      status.value = 'success'
+    } catch (err) {
+      if (!append) vehicles.value = []
+      status.value = 'error'
+      error.value = err
+      throw err
+    }
+  }
+
+  const refresh = async () => {
+    status.value = 'pending'
+    error.value = null
+    nextCursor.value = null
+    await fetchPage(null, false)
+  }
+
+  const loadMore = async () => {
+    if (!nextCursor.value || isLoadingMore.value) return
+    isLoadingMore.value = true
+    try {
+      await fetchPage(nextCursor.value, true)
+    } finally {
+      isLoadingMore.value = false
+    }
+  }
+
+  watch(
+    [() => auth.hydrated.value, () => auth.token.value],
+    async ([hydrated, token]) => {
+      if (!hydrated) return
+      if (!token) {
+        vehicles.value = []
+        status.value = 'idle'
+        error.value = null
+        return
+      }
+      await refresh()
+    },
+    { immediate: true }
+  )
+
+  return {
+    search,
+    vehicles,
+    nextCursor,
+    hasMore,
+    isLoadingMore,
+    status,
+    error,
+    refresh,
+    loadMore
+  }
+}
+
 export function useVehicleChecklists(
   vehicleId: Ref<number | null> | ComputedRef<number | null>
 ) {
@@ -490,5 +603,71 @@ export function useVehicleChecklists(
     status: checklistsState.status,
     error: checklistsState.error,
     refresh: checklistsState.refresh
+  }
+}
+
+export function useVehiclesSelector() {
+  const auth = useAuth()
+
+  const search = ref('')
+  const vehicles = ref<Vehicle[]>([])
+  const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const error = ref<unknown>(null)
+
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+  const fetchSelector = async (query?: string) => {
+    if (!auth.token.value) {
+      vehicles.value = []
+      status.value = 'idle'
+      return
+    }
+
+    status.value = 'pending'
+    error.value = null
+
+    try {
+      const params = new URLSearchParams({ limit: '50' })
+      if (query?.trim()) params.set('q', query.trim())
+      const response = await useApiFetch<ApiEnvelope<Vehicle[]>>(
+        `/vehicles/selector?${params.toString()}`
+      )
+      vehicles.value = response.data
+      status.value = 'success'
+    } catch (err) {
+      vehicles.value = []
+      status.value = 'error'
+      error.value = err
+    }
+  }
+
+  watch(
+    () => search.value,
+    (value) => {
+      if (searchTimer) clearTimeout(searchTimer)
+      searchTimer = setTimeout(() => fetchSelector(value), 300)
+    }
+  )
+
+  watch(
+    [() => auth.hydrated.value, () => auth.token.value],
+    async ([hydrated, token]) => {
+      if (!hydrated || !token) {
+        vehicles.value = []
+        status.value = 'idle'
+        return
+      }
+
+      await fetchSelector()
+    },
+    { immediate: true }
+  )
+
+  return {
+    search,
+    vehicles,
+    status,
+    error,
+    refresh: () => fetchSelector(search.value)
   }
 }

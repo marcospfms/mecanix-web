@@ -115,7 +115,7 @@ export function useDashboard(
     key: () => `dashboard:${employeeUserId.value ?? 'all'}`,
     immediate: false,
     server: false,
-      default: (): DashboardStats | null => null,
+    default: (): DashboardStats | null => null,
     transform: response => mapDashboard(response.data)
   })
 

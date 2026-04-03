@@ -21,19 +21,18 @@ const {
 } = useChecklistDetail(checklistId)
 const {
   updateChecklistItem,
-  updateChecklistItemNotes,
   deleteChecklist,
-  generatePdf
+  generatePdf,
+  recordChecklistMileage
 } = useChecklistActions()
 
 const vehicleId = computed(() => checklist.value?.vehicle_id ?? null)
 const { data: vehicle } = useVehicle(vehicleId)
+const { data: checklistMileage } = useChecklistMileage(checklistId)
 
 const localChecked = reactive<Record<number, boolean>>({})
-const localNotes = reactive<Record<number, string>>({})
 const localSelections = reactive<Record<number, number[]>>({})
 const savingItems = reactive<Record<number, boolean>>({})
-const noteTimers: Record<number, ReturnType<typeof setTimeout> | null> = {}
 
 watch(
   () => checklist.value?.items,
@@ -43,12 +42,10 @@ watch(
     for (const item of items) {
       if (!(item.id in localChecked)) {
         localChecked[item.id] = item.is_checked
-        localNotes[item.id] = item.notes ?? ''
         localSelections[item.id] = (item.selections ?? []).map(
           s => s.vehicle_checklist_item_option_id
         )
         savingItems[item.id] = false
-        noteTimers[item.id] = null
       }
     }
   },
@@ -107,28 +104,62 @@ const handleOptionChange = async (
   }
 }
 
-const handleNotesChange = (item: VehicleChecklistItem, notes: string) => {
-  localNotes[item.id] = notes
+const localMileage = ref('')
+const mileageSaved = ref(false)
+const finalizing = ref(false)
 
-  const existing = noteTimers[item.id]
-  if (existing !== null && existing !== undefined) {
-    clearTimeout(existing)
-  }
-
-  noteTimers[item.id] = setTimeout(async () => {
-    savingItems[item.id] = true
-
-    try {
-      await updateChecklistItemNotes(item.id, notes || null)
-    } catch {
-      toast.error({
-        title: 'Falha ao salvar nota',
-        description: 'Não foi possível salvar a nota.'
-      })
-    } finally {
-      savingItems[item.id] = false
+// Pre-populate from existing checklist mileage record
+watch(
+  () => checklistMileage.value,
+  (km) => {
+    if (km) {
+      localMileage.value = String(km.mileage)
+      mileageSaved.value = true
     }
-  }, 1500)
+  },
+  { immediate: true }
+)
+
+const isReadonly = computed(() => checklist.value?.is_completed ?? false)
+
+const isRequiredAndUnfilled = (item: VehicleChecklistItem): boolean => {
+  if (!item.is_required) return false
+  if (item.is_completable) return !localChecked[item.id]
+  if ((item.options?.length ?? 0) > 0)
+    return (localSelections[item.id]?.length ?? 0) === 0
+  return false
+}
+
+const handleFinalize = async () => {
+  if (finalizing.value) return
+  finalizing.value = true
+
+  try {
+    const mileage = Number(localMileage.value)
+    if (mileage && vehicleId.value && !mileageSaved.value) {
+      await recordChecklistMileage(vehicleId.value, checklistId.value, mileage)
+      mileageSaved.value = true
+    }
+
+    if (vehicleId.value) {
+      await navigateTo({
+        name: 'checklists-vehicles-vehicleId',
+        params: { vehicleId: String(vehicleId.value) }
+      })
+    } else {
+      await navigateTo({ name: 'checklists' })
+    }
+  } catch (err: unknown) {
+    toast.error({
+      title: 'Falha ao finalizar',
+      description: getErrorMessage(
+        err,
+        'Não foi possível registrar a quilometragem.'
+      )
+    })
+  } finally {
+    finalizing.value = false
+  }
 }
 
 const pdfLoading = ref(false)
@@ -140,7 +171,12 @@ const handleExportPdf = async () => {
 
   try {
     const result = await generatePdf(checklistId.value)
-    window.open(result.url, '_blank', 'noopener,noreferrer')
+    await navigateTo(result.url, {
+      external: true,
+      open: {
+        target: '_blank'
+      }
+    })
   } catch (err: unknown) {
     toast.error({
       title: 'Falha ao gerar PDF',
@@ -419,6 +455,15 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
           Itens da inspeção
         </h2>
 
+        <UAlert
+          v-if="isReadonly"
+          color="success"
+          variant="soft"
+          icon="i-lucide-check-circle-2"
+          title="Inspeção concluída"
+          description="Este checklist está concluído. Os itens são exibidos em modo leitura."
+        />
+
         <AppEmpty
           v-if="!checklist.items?.length"
           title="Nenhum item neste checklist"
@@ -433,7 +478,12 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
           <UCard
             v-for="item in checklist.items"
             :key="item.id"
-            class="rounded-2xl border-default"
+            :class="[
+              'rounded-2xl',
+              isRequiredAndUnfilled(item) && !isReadonly
+                ? 'border-error/60 ring-1 ring-error/20'
+                : 'border-default'
+            ]"
           >
             <div class="space-y-4">
               <div class="flex items-start justify-between gap-3">
@@ -484,6 +534,7 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
                       : 'i-lucide-circle'
                   "
                   :loading="savingItems[item.id]"
+                  :disabled="isReadonly"
                   @click="handleCheckChange(item, !localChecked[item.id])"
                 >
                   {{
@@ -513,45 +564,83 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
                     v-for="option in item.options as VehicleChecklistItemOption[]"
                     :key="option.id"
                     type="button"
-                    class="rounded-full border px-3 py-1.5 text-sm font-medium transition-colors"
+                    class="rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     :class="
                       isOptionSelected(item.id, option.id)
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-default bg-muted/20 text-toned hover:border-primary/50 hover:text-highlighted'
                     "
+                    :disabled="isReadonly"
                     @click="
-                      handleOptionChange(
-                        item,
-                        option.id,
-                        !isOptionSelected(item.id, option.id)
-                      )
+                      !isReadonly
+                        && handleOptionChange(
+                          item,
+                          option.id,
+                          !isOptionSelected(item.id, option.id)
+                        )
                     "
                   >
                     {{ option.label }}
                   </button>
                 </div>
               </div>
-
-              <div class="space-y-1.5">
-                <p
-                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                >
-                  Observações
-                </p>
-                <UTextarea
-                  :model-value="localNotes[item.id]"
-                  placeholder="Adicione observações sobre este item..."
-                  class="w-full"
-                  :rows="2"
-                  @update:model-value="
-                    val => handleNotesChange(item, String(val ?? ''))
-                  "
-                />
-              </div>
             </div>
           </UCard>
         </div>
       </section>
+
+      <!-- Finalizar -->
+      <template v-if="!isReadonly">
+        <UAlert
+          v-if="vehicle?.latest_mileage"
+          color="info"
+          variant="soft"
+          icon="i-lucide-gauge"
+          title="Última quilometragem registrada"
+          :description="`${vehicle.latest_mileage.toLocaleString('pt-BR')} km`"
+        />
+
+        <UCard class="rounded-2xl border-default">
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <p
+                class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >
+                Quilometragem atual
+              </p>
+              <UInput
+                v-model="localMileage"
+                placeholder="Ex.: 85000"
+                inputmode="numeric"
+                size="xl"
+                class="w-full"
+                :disabled="mileageSaved"
+              />
+              <p
+                v-if="mileageSaved"
+                class="flex items-center gap-1.5 text-xs text-toned"
+              >
+                <UIcon
+                  name="i-lucide-check-circle-2"
+                  class="size-3.5 text-success"
+                />
+                Quilometragem já registrada para este checklist
+              </p>
+            </div>
+
+            <UButton
+              color="primary"
+              icon="i-lucide-check-circle"
+              size="xl"
+              block
+              :loading="finalizing"
+              @click="handleFinalize"
+            >
+              Finalizar
+            </UButton>
+          </div>
+        </UCard>
+      </template>
     </template>
 
     <AppConfirm

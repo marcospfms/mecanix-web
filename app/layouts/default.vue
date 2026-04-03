@@ -6,7 +6,23 @@ const brandIconSrc = `${runtimeConfig.app.baseURL}branding/icon-transparent-sm.p
 const userName = computed(() => auth.user.value?.name ?? '')
 const userEmail = computed(() => auth.user.value?.email ?? '')
 
-const navigation = [
+type NavigationItem = {
+  label: string;
+  to: {
+    name:
+      | 'index'
+      | 'companies'
+      | 'checklists-templates'
+      | 'customers'
+      | 'employees'
+      | 'vehicles'
+      | 'checklists'
+      | 'profile';
+  };
+  icon: string;
+}
+
+const navigation: NavigationItem[] = [
   {
     label: 'Dashboard',
     to: { name: 'index' },
@@ -58,7 +74,7 @@ const navigation = [
           <ul class="space-y-2">
             <li
               v-for="item in navigation"
-              :key="item.to"
+              :key="item.label"
             >
               <UButton
                 :to="item.to"
@@ -182,7 +198,7 @@ const navigation = [
             <ul class="space-y-2">
               <li
                 v-for="item in navigation"
-                :key="item.to"
+                :key="item.label"
               >
                 <UButton
                   :to="item.to"
@@ -217,6 +233,17 @@ const navigation = [
                   </div>
                 </template>
               </ClientOnly>
+              <div class="mt-3 flex items-center justify-between gap-2">
+                <UColorModeButton />
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-log-out"
+                  @click="auth.logout"
+                >
+                  Sair
+                </UButton>
+              </div>
             </div>
           </div>
         </div>

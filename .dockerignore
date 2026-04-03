@@ -1,0 +1,16 @@
+.git
+.github
+.nuxt
+.output
+node_modules
+.env
+.env.*
+!.env.example
+coverage
+dist
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vscode
+.claude

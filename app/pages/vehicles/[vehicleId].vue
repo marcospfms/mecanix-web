@@ -8,7 +8,7 @@ definePageMeta({
 
 type MileageFormMode = 'create' | 'edit'
 
-const route = useRoute()
+const route = useRoute('vehicles-vehicleId')
 const toast = useAppToast()
 const vehicleId = computed(() => Number(route.params.vehicleId))
 const manualRefreshing = ref(false)
@@ -596,6 +596,66 @@ const handleRefresh = async () => {
                 <p class="mt-2 text-sm leading-6 text-toned">
                   {{ item.notes }}
                 </p>
+              </div>
+
+              <div
+                v-if="item.source_type === 'checklist' && item.checklist"
+                class="rounded-2xl border border-default bg-muted/20 px-4 py-3 space-y-3"
+              >
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                >
+                  Checklist de origem
+                </p>
+                <NuxtLink
+                  :to="{
+                    name: 'checklists-checklistId',
+                    params: { checklistId: item.checklist.id }
+                  }"
+                  class="flex items-center gap-2 text-sm text-toned hover:text-highlighted transition-colors"
+                >
+                  <UIcon
+                    name="i-lucide-clipboard-check"
+                    class="size-4 shrink-0"
+                  />
+                  <span>{{ item.checklist.name }}</span>
+                  <UBadge
+                    :color="item.checklist.is_completed ? 'success' : 'warning'"
+                    variant="subtle"
+                    size="sm"
+                    class="ml-auto"
+                  >
+                    {{
+                      item.checklist.is_completed ? 'Concluído' : 'Em andamento'
+                    }}
+                  </UBadge>
+                </NuxtLink>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-toned">
+                  <span
+                    v-if="item.checklist.executed_by"
+                    class="flex items-center gap-1"
+                  >
+                    <UIcon
+                      name="i-lucide-user"
+                      class="size-3"
+                    />
+                    {{ item.checklist.executed_by.name }}
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <UIcon
+                      name="i-lucide-calendar"
+                      class="size-3"
+                    />
+                    <NuxtTime
+                      :datetime="item.checklist.created_at"
+                      year="numeric"
+                      month="2-digit"
+                      day="2-digit"
+                      hour="2-digit"
+                      minute="2-digit"
+                    />
+                  </span>
+                </div>
               </div>
             </div>
           </UCard>
