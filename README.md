@@ -23,6 +23,9 @@ cp .env.example .env
 
 Ver [.env.example](.env.example) para as variáveis disponíveis.
 
+Para override em runtime no servidor Nuxt, use `NUXT_PUBLIC_GOOGLE_CLIENT_ID`.
+O nome antigo `NUXT_PUBLIC_GOOGLE_CLIENT_ID_WEB` fica apenas como fallback de compatibilidade em build.
+
 ## Desenvolvimento
 
 ```bash
