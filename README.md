@@ -62,3 +62,7 @@ Ver `docs/roadmaps/`.
 ## API
 
 Documentação dos endpoints disponível em `mecanix-core/docs/`.
+
+## Deploy
+
+Os ambientes devem receber as variáveis públicas do Nuxt no serviço do `mecanix-web`.
