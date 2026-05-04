@@ -20,7 +20,7 @@ export type Subscription = {
   id: number;
   subscription_plan_id: number;
   plan_name: string;
-  billing_provider: 'revenuecat' | 'free';
+  billing_provider: 'admin' | 'free';
   external_product_id?: string | null;
   auto_renews: boolean;
   status: 'active' | 'expired' | 'canceled' | 'pending';
