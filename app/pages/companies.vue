@@ -9,6 +9,10 @@ definePageMeta({
 type FormMode = 'create' | 'edit'
 
 const toast = useAppToast()
+const resolveServerUrl = useResolveServerUrl()
+
+const companyLogoSrc = (company: Company) => resolveServerUrl(company.logo_url)
+
 const {
   search,
   companies,
@@ -53,6 +57,13 @@ const currentLogoUrl = computed(() => editingCompany.value?.logo_url ?? null)
 const resolvedLogoPreview = computed(
   () => logoPreview.value || currentLogoUrl.value
 )
+const resolvedLogoPreviewSrc = computed(() => {
+  const raw = resolvedLogoPreview.value
+  if (!raw) {
+    return null
+  }
+  return resolveServerUrl(raw) ?? raw
+})
 const cnpjDigitsCount = computed(() => cnpj.value.replace(/\D/g, '').length)
 
 const resetForm = () => {
@@ -349,12 +360,14 @@ const handleRefresh = async () => {
               <div
                 class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-muted/30"
               >
-                <NuxtImg
-                  v-if="company.logo_url"
-                  :src="company.logo_url"
+                <img
+                  v-if="companyLogoSrc(company)"
+                  :src="companyLogoSrc(company)!"
                   :alt="company.name"
                   class="h-full w-full object-cover"
-                />
+                  loading="lazy"
+                  decoding="async"
+                >
                 <span
                   v-else
                   class="text-base font-semibold uppercase tracking-[0.08em] text-primary"
@@ -476,12 +489,12 @@ const handleRefresh = async () => {
                 <div
                   class="flex size-20 items-center justify-center overflow-hidden rounded-2xl border border-default bg-default"
                 >
-                  <NuxtImg
-                    v-if="resolvedLogoPreview"
-                    :src="resolvedLogoPreview"
+                  <img
+                    v-if="resolvedLogoPreviewSrc"
+                    :src="resolvedLogoPreviewSrc"
                     alt="Preview da logo"
                     class="h-full w-full object-cover"
-                  />
+                  >
                   <UIcon
                     v-else
                     name="i-lucide-image"
