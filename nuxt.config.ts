@@ -32,7 +32,15 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
+  build: {
+    transpile: ['vue']
+  },
+
   vite: {
+    // Uma só cópia do Vue (evita currentRenderingInstance === null em renderSlot com pnpm)
+    resolve: {
+      dedupe: ['vue', '@vue/runtime-core', '@vue/runtime-dom']
+    },
     optimizeDeps: {
       include: ['@vue/devtools-core', '@vue/devtools-kit']
     }
