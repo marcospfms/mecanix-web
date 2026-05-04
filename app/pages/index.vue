@@ -48,9 +48,9 @@ const employeeFilterItems = computed<SelectItem[]>(() => {
   for (const employee of statsResolved.value.checklists_by_employee ?? []) {
     items.push({
       label:
-        employee.name ??
-        employee.username ??
-        `Funcionário #${employee.user_id}`,
+        employee.name
+        ?? employee.username
+        ?? `Funcionário #${employee.user_id}`,
       value: String(employee.user_id)
     })
   }
@@ -126,15 +126,15 @@ const employeeStats = computed(
 )
 const isEmptyDashboard = computed(() => {
   return (
-    (statsResolved.value.total_companies ?? 0) === 0 &&
-    (statsResolved.value.total_customers ?? 0) === 0 &&
-    (statsResolved.value.total_vehicles ?? 0) === 0 &&
-    (statsResolved.value.checklists_templates ?? 0) === 0 &&
-    statsResolved.value.checklists_total === 0 &&
-    statsResolved.value.checklists_month_total === 0 &&
-    statsResolved.value.checklists_vehicles_inspected_this_month === 0 &&
-    recentExecutions.value.length === 0 &&
-    employeeStats.value.length === 0
+    (statsResolved.value.total_companies ?? 0) === 0
+    && (statsResolved.value.total_customers ?? 0) === 0
+    && (statsResolved.value.total_vehicles ?? 0) === 0
+    && (statsResolved.value.checklists_templates ?? 0) === 0
+    && statsResolved.value.checklists_total === 0
+    && statsResolved.value.checklists_month_total === 0
+    && statsResolved.value.checklists_vehicles_inspected_this_month === 0
+    && recentExecutions.value.length === 0
+    && employeeStats.value.length === 0
   )
 })
 
@@ -282,7 +282,10 @@ const handleRefresh = async () => {
                   </div>
 
                   <div class="rounded-xl bg-primary/10 p-2 text-primary">
-                    <UIcon :name="card.icon" class="size-5" />
+                    <UIcon
+                      :name="card.icon"
+                      class="size-5"
+                    />
                   </div>
                 </div>
               </div>
@@ -354,7 +357,10 @@ const handleRefresh = async () => {
                 </div>
 
                 <div class="rounded-xl bg-muted/60 p-2 text-primary">
-                  <UIcon :name="card.icon" class="size-5" />
+                  <UIcon
+                    :name="card.icon"
+                    class="size-5"
+                  />
                 </div>
               </div>
             </UCard>
@@ -373,7 +379,10 @@ const handleRefresh = async () => {
             icon="i-lucide-clipboard-check"
           />
 
-          <div v-else class="grid gap-3">
+          <div
+            v-else
+            class="grid gap-3"
+          >
             <UCard
               v-for="execution in recentExecutions"
               :key="execution.id"
@@ -387,8 +396,8 @@ const handleRefresh = async () => {
                     </p>
                     <p class="text-sm text-toned">
                       {{
-                        execution.vehicle?.customer_name ||
-                        'Cliente não identificado'
+                        execution.vehicle?.customer_name
+                          || 'Cliente não identificado'
                       }}
                     </p>
                   </div>
@@ -411,17 +420,23 @@ const handleRefresh = async () => {
 
                 <div class="grid gap-3 text-sm text-toned sm:grid-cols-3">
                   <div>
-                    <p class="font-medium text-highlighted">Placa</p>
+                    <p class="font-medium text-highlighted">
+                      Placa
+                    </p>
                     <p>{{ execution.vehicle?.license_plate || '-' }}</p>
                   </div>
                   <div>
-                    <p class="font-medium text-highlighted">Executado por</p>
+                    <p class="font-medium text-highlighted">
+                      Executado por
+                    </p>
                     <p>
                       {{ execution.executed_by?.name || 'Sem responsável' }}
                     </p>
                   </div>
                   <div>
-                    <p class="font-medium text-highlighted">Data</p>
+                    <p class="font-medium text-highlighted">
+                      Data
+                    </p>
                     <NuxtTime
                       :datetime="execution.executed_at ?? execution.created_at"
                       locale="pt-BR"
@@ -438,7 +453,10 @@ const handleRefresh = async () => {
           </div>
         </section>
 
-        <section v-if="employeeStats.length > 0" class="space-y-3">
+        <section
+          v-if="employeeStats.length > 0"
+          class="space-y-3"
+        >
           <h2 class="text-lg font-semibold text-highlighted">
             Por funcionário
           </h2>
@@ -453,9 +471,9 @@ const handleRefresh = async () => {
                 <div class="space-y-1">
                   <p class="text-base font-semibold text-highlighted">
                     {{
-                      employee.name ||
-                      employee.username ||
-                      `Funcionário #${employee.user_id}`
+                      employee.name
+                        || employee.username
+                        || `Funcionário #${employee.user_id}`
                     }}
                   </p>
                   <p class="text-sm text-toned">

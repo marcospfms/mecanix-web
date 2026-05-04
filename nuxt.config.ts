@@ -26,15 +26,15 @@ export default defineNuxtConfig({
     }
   },
 
+  build: {
+    transpile: ['vue']
+  },
+
   experimental: {
     typedPages: true
   },
 
   compatibilityDate: '2025-01-15',
-
-  build: {
-    transpile: ['vue']
-  },
 
   vite: {
     // Uma só cópia do Vue (evita currentRenderingInstance === null em renderSlot com pnpm)

@@ -7,7 +7,7 @@ const userName = computed(() => auth.user.value?.name ?? '')
 const userEmail = computed(() => auth.user.value?.email ?? '')
 
 type NavigationItem = {
-  label: string
+  label: string;
   to: {
     name:
       | 'index'
@@ -17,9 +17,9 @@ type NavigationItem = {
       | 'employees'
       | 'vehicles'
       | 'checklists'
-      | 'profile'
-  }
-  icon: string
+      | 'profile';
+  };
+  icon: string;
 }
 
 const navigation: NavigationItem[] = [
@@ -66,14 +66,16 @@ const navigation: NavigationItem[] = [
             />
             <span
               class="text-lg font-semibold tracking-[-0.02em] text-highlighted"
-              >Mecanix</span
-            >
+            >Mecanix</span>
           </div>
         </div>
 
         <nav class="flex-1 px-4 py-5">
           <ul class="space-y-2">
-            <li v-for="item in navigation" :key="item.label">
+            <li
+              v-for="item in navigation"
+              :key="item.label"
+            >
               <UButton
                 :to="item.to"
                 variant="ghost"
@@ -97,7 +99,10 @@ const navigation: NavigationItem[] = [
                 {{ userEmail }}
               </p>
             </div>
-            <div v-else class="space-y-2">
+            <div
+              v-else
+              class="space-y-2"
+            >
               <div class="h-4 w-28 rounded bg-muted" />
               <div class="h-3 w-40 rounded bg-muted" />
             </div>
@@ -128,8 +133,7 @@ const navigation: NavigationItem[] = [
               />
               <span
                 class="text-base font-semibold tracking-[-0.02em] text-highlighted"
-                >Mecanix</span
-              >
+              >Mecanix</span>
             </div>
             <div class="flex items-center gap-2">
               <UButton
@@ -177,8 +181,7 @@ const navigation: NavigationItem[] = [
               />
               <span
                 class="text-base font-semibold tracking-[-0.02em] text-highlighted"
-                >Mecanix</span
-              >
+              >Mecanix</span>
             </div>
 
             <UButton
@@ -191,7 +194,10 @@ const navigation: NavigationItem[] = [
 
           <nav class="flex-1 px-3 py-4">
             <ul class="space-y-2">
-              <li v-for="item in navigation" :key="item.label">
+              <li
+                v-for="item in navigation"
+                :key="item.label"
+              >
                 <UButton
                   :to="item.to"
                   variant="ghost"
@@ -216,7 +222,10 @@ const navigation: NavigationItem[] = [
                   {{ userEmail }}
                 </p>
               </div>
-              <div v-else class="space-y-2">
+              <div
+                v-else
+                class="space-y-2"
+              >
                 <div class="h-4 w-28 rounded bg-muted" />
                 <div class="h-3 w-40 rounded bg-muted" />
               </div>

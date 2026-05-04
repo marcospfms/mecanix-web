@@ -23,7 +23,7 @@ const infoErrors = ref<{ name?: string; email?: string }>({})
 
 watch(
   () => auth.user.value,
-  user => {
+  (user) => {
     if (user) {
       infoName.value = user.name
       infoEmail.value = user.email ?? ''
@@ -37,8 +37,8 @@ const validateInfo = () => {
     errors.name = 'Informe o seu nome.'
   }
   if (
-    infoEmail.value.trim() &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(infoEmail.value.trim())
+    infoEmail.value.trim()
+    && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(infoEmail.value.trim())
   ) {
     errors.email = 'Informe um e-mail válido.'
   }
@@ -123,7 +123,10 @@ const usageRows = [
       description="Aguarde um instante."
     />
 
-    <div v-else class="space-y-5">
+    <div
+      v-else
+      class="space-y-5"
+    >
       <!-- Resumo do perfil -->
       <UCard class="rounded-2xl border-default">
         <div class="flex items-center gap-4">
@@ -154,7 +157,10 @@ const usageRows = [
             <div
               class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
             >
-              <UIcon name="i-lucide-user" class="size-4 text-primary" />
+              <UIcon
+                name="i-lucide-user"
+                class="size-4 text-primary"
+              />
             </div>
             <h2 class="text-base font-semibold text-highlighted">
               Dados pessoais
@@ -176,7 +182,10 @@ const usageRows = [
                 :maxlength="255"
                 @update:model-value="infoErrors.name = undefined"
               />
-              <p v-if="infoErrors.name" class="text-sm text-error">
+              <p
+                v-if="infoErrors.name"
+                class="text-sm text-error"
+              >
                 {{ infoErrors.name }}
               </p>
             </div>
@@ -196,7 +205,10 @@ const usageRows = [
                 :maxlength="255"
                 @update:model-value="infoErrors.email = undefined"
               />
-              <p v-if="infoErrors.email" class="text-sm text-error">
+              <p
+                v-if="infoErrors.email"
+                class="text-sm text-error"
+              >
                 {{ infoErrors.email }}
               </p>
             </div>
@@ -222,9 +234,14 @@ const usageRows = [
             <div
               class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
             >
-              <UIcon name="i-lucide-palette" class="size-4 text-primary" />
+              <UIcon
+                name="i-lucide-palette"
+                class="size-4 text-primary"
+              />
             </div>
-            <h2 class="text-base font-semibold text-highlighted">Aparência</h2>
+            <h2 class="text-base font-semibold text-highlighted">
+              Aparência
+            </h2>
           </div>
 
           <div class="grid grid-cols-3 gap-2">
@@ -240,7 +257,10 @@ const usageRows = [
               "
               @click="colorMode.preference = opt.value"
             >
-              <UIcon :name="opt.icon" class="size-5" />
+              <UIcon
+                :name="opt.icon"
+                class="size-5"
+              />
               {{ opt.label }}
             </button>
           </div>
@@ -254,20 +274,31 @@ const usageRows = [
             <div
               class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
             >
-              <UIcon name="i-lucide-crown" class="size-4 text-primary" />
+              <UIcon
+                name="i-lucide-crown"
+                class="size-4 text-primary"
+              />
             </div>
-            <h2 class="text-base font-semibold text-highlighted">Assinatura</h2>
+            <h2 class="text-base font-semibold text-highlighted">
+              Assinatura
+            </h2>
           </div>
 
           <div
             v-if="subscriptionStatus === 'pending' && !subscriptionData"
             class="flex items-center gap-2 text-sm text-toned"
           >
-            <UIcon name="i-lucide-loader" class="size-4 animate-spin" />
+            <UIcon
+              name="i-lucide-loader"
+              class="size-4 animate-spin"
+            />
             <span>Carregando assinatura…</span>
           </div>
 
-          <div v-else-if="!subscriptionData" class="text-sm text-toned">
+          <div
+            v-else-if="!subscriptionData"
+            class="text-sm text-toned"
+          >
             Nenhuma assinatura ativa encontrada.
           </div>
 
@@ -316,8 +347,8 @@ const usageRows = [
               </div>
               <div
                 v-if="
-                  subscriptionData.subscription.renews_at ||
-                  subscriptionData.subscription.ends_at
+                  subscriptionData.subscription.renews_at
+                    || subscriptionData.subscription.ends_at
                 "
               >
                 <p
@@ -332,8 +363,8 @@ const usageRows = [
                 <p class="mt-1 text-sm text-highlighted">
                   <NuxtTime
                     :datetime="
-                      (subscriptionData.subscription.renews_at ??
-                        subscriptionData.subscription.ends_at)!
+                      (subscriptionData.subscription.renews_at
+                        ?? subscriptionData.subscription.ends_at)!
                     "
                     year="numeric"
                     month="2-digit"
@@ -398,7 +429,9 @@ const usageRows = [
       <UCard class="rounded-2xl border-default">
         <div class="flex items-center justify-between gap-4">
           <div>
-            <p class="text-sm font-medium text-highlighted">Encerrar sessão</p>
+            <p class="text-sm font-medium text-highlighted">
+              Encerrar sessão
+            </p>
             <p class="text-xs text-toned">
               Você será desconectado e redirecionado para o login.
             </p>
