@@ -23,7 +23,7 @@ const infoErrors = ref<{ name?: string; email?: string }>({})
 
 watch(
   () => auth.user.value,
-  (user) => {
+  user => {
     if (user) {
       infoName.value = user.name
       infoEmail.value = user.email ?? ''
@@ -37,8 +37,8 @@ const validateInfo = () => {
     errors.name = 'Informe o seu nome.'
   }
   if (
-    infoEmail.value.trim()
-    && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(infoEmail.value.trim())
+    infoEmail.value.trim() &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(infoEmail.value.trim())
   ) {
     errors.email = 'Informe um e-mail válido.'
   }
@@ -94,6 +94,7 @@ const userInitials = computed(() => {
     .join('')
     .toUpperCase()
 })
+const isProfileReady = computed(() => auth.hydrated.value)
 
 const usageRows = [
   { key: 'companies' as const, label: 'Empresas' },
@@ -116,340 +117,303 @@ const usageRows = [
       </h1>
     </section>
 
-    <ClientOnly>
-      <div class="space-y-5">
-        <!-- Resumo do perfil -->
-        <UCard class="rounded-2xl border-default">
-          <div class="flex items-center gap-4">
-            <div
-              class="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
+    <AppLoading
+      v-if="!isProfileReady"
+      title="Carregando perfil"
+      description="Aguarde um instante."
+    />
+
+    <div v-else class="space-y-5">
+      <!-- Resumo do perfil -->
+      <UCard class="rounded-2xl border-default">
+        <div class="flex items-center gap-4">
+          <div
+            class="flex size-16 shrink-0 items-center justify-center rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
+          >
+            <span
+              class="text-xl font-semibold uppercase tracking-[0.06em] text-primary"
             >
-              <span
-                class="text-xl font-semibold uppercase tracking-[0.06em] text-primary"
-              >
-                {{ userInitials }}
-              </span>
-            </div>
-            <div class="min-w-0">
-              <p class="truncate text-lg font-semibold text-highlighted">
-                {{ auth.user.value?.name }}
-              </p>
-              <p class="truncate text-sm text-toned">
-                {{ auth.user.value?.email || 'Sem e-mail' }}
-              </p>
-            </div>
+              {{ userInitials }}
+            </span>
           </div>
-        </UCard>
-
-        <!-- Dados pessoais -->
-        <UCard class="rounded-2xl border-default">
-          <div class="space-y-5">
-            <div class="flex items-center gap-3">
-              <div
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
-              >
-                <UIcon
-                  name="i-lucide-user"
-                  class="size-4 text-primary"
-                />
-              </div>
-              <h2 class="text-base font-semibold text-highlighted">
-                Dados pessoais
-              </h2>
-            </div>
-
-            <div class="space-y-4">
-              <div class="space-y-2">
-                <label
-                  class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                >
-                  Nome
-                </label>
-                <UInput
-                  v-model="infoName"
-                  placeholder="Seu nome completo"
-                  size="xl"
-                  class="w-full"
-                  :maxlength="255"
-                  @update:model-value="infoErrors.name = undefined"
-                />
-                <p
-                  v-if="infoErrors.name"
-                  class="text-sm text-error"
-                >
-                  {{ infoErrors.name }}
-                </p>
-              </div>
-
-              <div class="space-y-2">
-                <label
-                  class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                >
-                  E-mail
-                </label>
-                <UInput
-                  v-model="infoEmail"
-                  type="email"
-                  placeholder="seu@email.com"
-                  size="xl"
-                  class="w-full"
-                  :maxlength="255"
-                  @update:model-value="infoErrors.email = undefined"
-                />
-                <p
-                  v-if="infoErrors.email"
-                  class="text-sm text-error"
-                >
-                  {{ infoErrors.email }}
-                </p>
-              </div>
-            </div>
-
-            <div class="flex justify-end">
-              <UButton
-                color="primary"
-                :loading="infoSubmitting"
-                icon="i-lucide-save"
-                @click="handleSaveInfo"
-              >
-                Salvar dados
-              </UButton>
-            </div>
+          <div class="min-w-0">
+            <p class="truncate text-lg font-semibold text-highlighted">
+              {{ auth.user.value?.name }}
+            </p>
+            <p class="truncate text-sm text-toned">
+              {{ auth.user.value?.email || 'Sem e-mail' }}
+            </p>
           </div>
-        </UCard>
+        </div>
+      </UCard>
 
-        <!-- Aparência -->
-        <UCard class="rounded-2xl border-default">
+      <!-- Dados pessoais -->
+      <UCard class="rounded-2xl border-default">
+        <div class="space-y-5">
+          <div class="flex items-center gap-3">
+            <div
+              class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+            >
+              <UIcon name="i-lucide-user" class="size-4 text-primary" />
+            </div>
+            <h2 class="text-base font-semibold text-highlighted">
+              Dados pessoais
+            </h2>
+          </div>
+
           <div class="space-y-4">
-            <div class="flex items-center gap-3">
-              <div
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+            <div class="space-y-2">
+              <label
+                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
               >
-                <UIcon
-                  name="i-lucide-palette"
-                  class="size-4 text-primary"
-                />
-              </div>
-              <h2 class="text-base font-semibold text-highlighted">
-                Aparência
-              </h2>
+                Nome
+              </label>
+              <UInput
+                v-model="infoName"
+                placeholder="Seu nome completo"
+                size="xl"
+                class="w-full"
+                :maxlength="255"
+                @update:model-value="infoErrors.name = undefined"
+              />
+              <p v-if="infoErrors.name" class="text-sm text-error">
+                {{ infoErrors.name }}
+              </p>
             </div>
 
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                v-for="opt in colorModeOptions"
-                :key="opt.value"
-                type="button"
-                class="flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-sm font-medium transition-colors"
-                :class="
-                  colorMode.preference === opt.value
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-default bg-muted/20 text-toned hover:border-primary/40 hover:text-highlighted'
-                "
-                @click="colorMode.preference = opt.value"
+            <div class="space-y-2">
+              <label
+                class="block text-xs font-semibold uppercase tracking-[0.24em] text-primary"
               >
-                <UIcon
-                  :name="opt.icon"
-                  class="size-5"
-                />
-                {{ opt.label }}
-              </button>
+                E-mail
+              </label>
+              <UInput
+                v-model="infoEmail"
+                type="email"
+                placeholder="seu@email.com"
+                size="xl"
+                class="w-full"
+                :maxlength="255"
+                @update:model-value="infoErrors.email = undefined"
+              />
+              <p v-if="infoErrors.email" class="text-sm text-error">
+                {{ infoErrors.email }}
+              </p>
             </div>
           </div>
-        </UCard>
 
-        <!-- Assinatura -->
-        <UCard class="rounded-2xl border-default">
-          <div class="space-y-5">
-            <div class="flex items-center gap-3">
-              <div
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+          <div class="flex justify-end">
+            <UButton
+              color="primary"
+              :loading="infoSubmitting"
+              icon="i-lucide-save"
+              @click="handleSaveInfo"
+            >
+              Salvar dados
+            </UButton>
+          </div>
+        </div>
+      </UCard>
+
+      <!-- Aparência -->
+      <UCard class="rounded-2xl border-default">
+        <div class="space-y-4">
+          <div class="flex items-center gap-3">
+            <div
+              class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+            >
+              <UIcon name="i-lucide-palette" class="size-4 text-primary" />
+            </div>
+            <h2 class="text-base font-semibold text-highlighted">Aparência</h2>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="opt in colorModeOptions"
+              :key="opt.value"
+              type="button"
+              class="flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-sm font-medium transition-colors"
+              :class="
+                colorMode.preference === opt.value
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-default bg-muted/20 text-toned hover:border-primary/40 hover:text-highlighted'
+              "
+              @click="colorMode.preference = opt.value"
+            >
+              <UIcon :name="opt.icon" class="size-5" />
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+      </UCard>
+
+      <!-- Assinatura -->
+      <UCard class="rounded-2xl border-default">
+        <div class="space-y-5">
+          <div class="flex items-center gap-3">
+            <div
+              class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+            >
+              <UIcon name="i-lucide-crown" class="size-4 text-primary" />
+            </div>
+            <h2 class="text-base font-semibold text-highlighted">Assinatura</h2>
+          </div>
+
+          <div
+            v-if="subscriptionStatus === 'pending' && !subscriptionData"
+            class="flex items-center gap-2 text-sm text-toned"
+          >
+            <UIcon name="i-lucide-loader" class="size-4 animate-spin" />
+            <span>Carregando assinatura…</span>
+          </div>
+
+          <div v-else-if="!subscriptionData" class="text-sm text-toned">
+            Nenhuma assinatura ativa encontrada.
+          </div>
+
+          <template v-else>
+            <div class="flex flex-wrap items-center gap-3">
+              <p class="text-lg font-semibold text-highlighted">
+                {{ subscriptionData.subscription.plan_name }}
+              </p>
+              <UBadge
+                :color="
+                  subscriptionStatusColor(subscriptionData.subscription.status)
+                "
+                variant="soft"
+                size="sm"
               >
-                <UIcon
-                  name="i-lucide-crown"
-                  class="size-4 text-primary"
-                />
-              </div>
-              <h2 class="text-base font-semibold text-highlighted">
-                Assinatura
-              </h2>
+                {{
+                  subscriptionStatusLabel(subscriptionData.subscription.status)
+                }}
+              </UBadge>
+              <UBadge
+                v-if="subscriptionData.subscription.auto_renews"
+                color="neutral"
+                variant="soft"
+                size="sm"
+                icon="i-lucide-refresh-cw"
+              >
+                Renovação automática
+              </UBadge>
             </div>
 
-            <div
-              v-if="subscriptionStatus === 'pending' && !subscriptionData"
-              class="flex items-center gap-2 text-sm text-toned"
-            >
-              <UIcon
-                name="i-lucide-loader"
-                class="size-4 animate-spin"
-              />
-              <span>Carregando assinatura…</span>
-            </div>
-
-            <div
-              v-else-if="!subscriptionData"
-              class="text-sm text-toned"
-            >
-              Nenhuma assinatura ativa encontrada.
-            </div>
-
-            <template v-else>
-              <div class="flex flex-wrap items-center gap-3">
-                <p class="text-lg font-semibold text-highlighted">
-                  {{ subscriptionData.subscription.plan_name }}
-                </p>
-                <UBadge
-                  :color="
-                    subscriptionStatusColor(
-                      subscriptionData.subscription.status
-                    )
-                  "
-                  variant="soft"
-                  size="sm"
-                >
-                  {{
-                    subscriptionStatusLabel(
-                      subscriptionData.subscription.status
-                    )
-                  }}
-                </UBadge>
-                <UBadge
-                  v-if="subscriptionData.subscription.auto_renews"
-                  color="neutral"
-                  variant="soft"
-                  size="sm"
-                  icon="i-lucide-refresh-cw"
-                >
-                  Renovação automática
-                </UBadge>
-              </div>
-
-              <div class="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <p
-                    class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                  >
-                    Início
-                  </p>
-                  <p class="mt-1 text-sm text-highlighted">
-                    <NuxtTime
-                      :datetime="subscriptionData.subscription.starts_at"
-                      year="numeric"
-                      month="2-digit"
-                      day="2-digit"
-                    />
-                  </p>
-                </div>
-                <div
-                  v-if="
-                    subscriptionData.subscription.renews_at
-                      || subscriptionData.subscription.ends_at
-                  "
-                >
-                  <p
-                    class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
-                  >
-                    {{
-                      subscriptionData.subscription.renews_at
-                        ? 'Próxima renovação'
-                        : 'Expira em'
-                    }}
-                  </p>
-                  <p class="mt-1 text-sm text-highlighted">
-                    <NuxtTime
-                      :datetime="
-                        (subscriptionData.subscription.renews_at
-                          ?? subscriptionData.subscription.ends_at)!
-                      "
-                      year="numeric"
-                      month="2-digit"
-                      day="2-digit"
-                    />
-                  </p>
-                </div>
-              </div>
-
-              <div class="space-y-3">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div>
                 <p
                   class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
                 >
-                  Uso em
-                  {{
-                    subscriptionData.period.month.toString().padStart(2, '0')
-                  }}/{{ subscriptionData.period.year }}
+                  Início
                 </p>
-                <div class="space-y-2">
-                  <div
-                    v-for="row in usageRows"
-                    :key="row.key"
-                    class="flex items-center gap-3"
-                  >
-                    <p class="w-44 shrink-0 text-sm text-toned">
-                      {{ row.label }}
-                    </p>
-                    <div class="flex flex-1 items-center gap-2">
+                <p class="mt-1 text-sm text-highlighted">
+                  <NuxtTime
+                    :datetime="subscriptionData.subscription.starts_at"
+                    year="numeric"
+                    month="2-digit"
+                    day="2-digit"
+                  />
+                </p>
+              </div>
+              <div
+                v-if="
+                  subscriptionData.subscription.renews_at ||
+                  subscriptionData.subscription.ends_at
+                "
+              >
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+                >
+                  {{
+                    subscriptionData.subscription.renews_at
+                      ? 'Próxima renovação'
+                      : 'Expira em'
+                  }}
+                </p>
+                <p class="mt-1 text-sm text-highlighted">
+                  <NuxtTime
+                    :datetime="
+                      (subscriptionData.subscription.renews_at ??
+                        subscriptionData.subscription.ends_at)!
+                    "
+                    year="numeric"
+                    month="2-digit"
+                    day="2-digit"
+                  />
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <p
+                class="text-xs font-semibold uppercase tracking-[0.24em] text-primary"
+              >
+                Uso em
+                {{
+                  subscriptionData.period.month.toString().padStart(2, '0')
+                }}/{{ subscriptionData.period.year }}
+              </p>
+              <div class="space-y-2">
+                <div
+                  v-for="row in usageRows"
+                  :key="row.key"
+                  class="flex items-center gap-3"
+                >
+                  <p class="w-44 shrink-0 text-sm text-toned">
+                    {{ row.label }}
+                  </p>
+                  <div class="flex flex-1 items-center gap-2">
+                    <div
+                      v-if="!subscriptionData.usage[row.key].is_unlimited"
+                      class="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
+                    >
                       <div
-                        v-if="!subscriptionData.usage[row.key].is_unlimited"
-                        class="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
-                      >
-                        <div
-                          class="h-full rounded-full bg-primary transition-all"
-                          :style="`width: ${subscriptionData.usage[row.key].limit ? Math.min(100, Math.round((subscriptionData.usage[row.key].used / subscriptionData.usage[row.key].limit!) * 100)) : 0}%`"
-                        />
-                      </div>
-                      <p class="shrink-0 text-sm font-medium text-highlighted">
-                        {{
-                          subscriptionData.usage[row.key].is_unlimited
-                            ? '∞'
-                            : `${subscriptionData.usage[row.key].used} / ${subscriptionData.usage[row.key].limit}`
-                        }}
-                      </p>
+                        class="h-full rounded-full bg-primary transition-all"
+                        :style="`width: ${subscriptionData.usage[row.key].limit ? Math.min(100, Math.round((subscriptionData.usage[row.key].used / subscriptionData.usage[row.key].limit!) * 100)) : 0}%`"
+                      />
                     </div>
+                    <p class="shrink-0 text-sm font-medium text-highlighted">
+                      {{
+                        subscriptionData.usage[row.key].is_unlimited
+                          ? '∞'
+                          : `${subscriptionData.usage[row.key].used} / ${subscriptionData.usage[row.key].limit}`
+                      }}
+                    </p>
                   </div>
                 </div>
               </div>
-            </template>
-
-            <UAlert
-              color="neutral"
-              variant="soft"
-              icon="i-lucide-smartphone"
-              title="Gerenciamento pelo app"
-              description="Para alterar ou cancelar sua assinatura, acesse o app Mecanix no Android."
-            />
-          </div>
-        </UCard>
-
-        <!-- Logout -->
-        <UCard class="rounded-2xl border-default">
-          <div class="flex items-center justify-between gap-4">
-            <div>
-              <p class="text-sm font-medium text-highlighted">
-                Encerrar sessão
-              </p>
-              <p class="text-xs text-toned">
-                Você será desconectado e redirecionado para o login.
-              </p>
             </div>
-            <UButton
-              color="error"
-              variant="soft"
-              icon="i-lucide-log-out"
-              @click="logoutOpen = true"
-            >
-              Sair
-            </UButton>
-          </div>
-        </UCard>
-      </div>
+          </template>
 
-      <template #fallback>
-        <AppLoading
-          title="Carregando perfil"
-          description="Aguarde um instante."
-        />
-      </template>
-    </ClientOnly>
+          <UAlert
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-mail"
+            title="Atendimento por e-mail"
+            description="Para alterar ou cancelar sua assinatura, entre em contato pelo e-mail mamedelabs@gmail.com."
+          />
+        </div>
+      </UCard>
+
+      <!-- Logout -->
+      <UCard class="rounded-2xl border-default">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm font-medium text-highlighted">Encerrar sessão</p>
+            <p class="text-xs text-toned">
+              Você será desconectado e redirecionado para o login.
+            </p>
+          </div>
+          <UButton
+            color="error"
+            variant="soft"
+            icon="i-lucide-log-out"
+            @click="logoutOpen = true"
+          >
+            Sair
+          </UButton>
+        </div>
+      </UCard>
+    </div>
 
     <!-- Confirm logout -->
     <AppConfirm
