@@ -5,7 +5,7 @@
 
 ## Objetivo
 
-App web (Nuxt 4 + Nuxt UI v4) para donos de oficina acompanharem dados e realizarem operações via navegador desktop/mobile, consumindo a mesma API REST do `mecanix-core`. A assinatura/pagamento permanece exclusiva do app mobile via RevenueCat.
+App web (Nuxt 4 + Nuxt UI v4) para donos de oficina acompanharem dados e realizarem operações via navegador desktop/mobile, consumindo a mesma API REST do `mecanix-core`. A assinatura é definida apenas no painel administrativo do core.
 
 ## Stack técnica
 
@@ -388,4 +388,4 @@ interface User {
 - `mecanix-app/` — App mobile de referência de funcionalidades
 - `mecanix-core/docs/new_road.md` — Roadmap master do produto
 - `mecanix-core/docs/roadmaps/roadmap-v1.9-company-employees.md` — Modelo de funcionários e permissões
-- `mecanix-core/docs/roadmaps/roadmap-v1.8-revenuecat.md` — Assinaturas (somente leitura no client web)
+- `mecanix-core/docs/new_road.md` — Assinaturas administrativas (somente leitura no client web)
