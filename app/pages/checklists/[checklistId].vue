@@ -481,7 +481,7 @@ const getTypeLabel = (item: VehicleChecklistItem) => {
             :class="[
               'rounded-2xl',
               isRequiredAndUnfilled(item) && !isReadonly
-                ? 'border-error/60 ring-1 ring-error/20'
+                ? 'border-warning/90 ring-2 ring-warning/30'
                 : 'border-default'
             ]"
           >

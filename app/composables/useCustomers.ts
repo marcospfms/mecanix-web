@@ -39,6 +39,13 @@ function onlyDigits(value: string) {
   return value.replace(/\D/g, '')
 }
 
+function normalizeSearchText(value?: string | null) {
+  return (value ?? '')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+}
+
 export function formatTaxId(value: string) {
   const digits = onlyDigits(value)
 
@@ -126,7 +133,8 @@ export function useCustomers() {
   })
 
   const filteredCustomers = computed(() => {
-    const term = search.value.trim().toLowerCase()
+    const term = normalizeSearchText(search.value.trim())
+    const termDigits = onlyDigits(term)
 
     if (!term) {
       return customersResolved.value
@@ -137,11 +145,11 @@ export function useCustomers() {
       const phoneDigits = onlyDigits(customer.phone ?? '')
 
       return (
-        customer.name.toLowerCase().includes(term)
-        || customer.tax_id.toLowerCase().includes(term)
-        || taxDigits.includes(onlyDigits(term))
-        || phoneDigits.includes(onlyDigits(term))
-        || (customer.email ?? '').toLowerCase().includes(term)
+        normalizeSearchText(customer.name).includes(term)
+        || normalizeSearchText(customer.tax_id).includes(term)
+        || normalizeSearchText(customer.email).includes(term)
+        || (termDigits.length > 0
+          && (taxDigits.includes(termDigits) || phoneDigits.includes(termDigits)))
       )
     })
   })

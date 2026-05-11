@@ -10,6 +10,7 @@ type FormMode = 'create' | 'edit'
 
 const toast = useAppToast()
 const manualRefreshing = ref(false)
+const visibleCount = ref(5)
 const {
   search,
   customers,
@@ -44,6 +45,12 @@ const isLoading = computed(
   () => status.value === 'pending' && customers.value.length === 0
 )
 const hasCustomers = computed(() => customers.value.length > 0)
+const displayedCustomers = computed(() =>
+  customers.value.slice(0, visibleCount.value)
+)
+const hasMoreCustomers = computed(
+  () => customers.value.length > visibleCount.value
+)
 const formTitle = computed(() =>
   formMode.value === 'create' ? 'Novo cliente' : 'Editar cliente'
 )
@@ -57,8 +64,21 @@ const isListRefreshing = computed(() => manualRefreshing.value)
 const taxIdDigitsCount = computed(() => taxId.value.replace(/\D/g, '').length)
 const phoneDigitsCount = computed(() => phone.value.replace(/\D/g, '').length)
 
-const taxIdKind = (value: string) =>
-  value.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF'
+watch(
+  () => search.value,
+  () => {
+    visibleCount.value = 5
+  }
+)
+
+watch(
+  () => customers.value.length,
+  () => {
+    if (visibleCount.value < 5) {
+      visibleCount.value = 5
+    }
+  }
+)
 
 const resetForm = () => {
   name.value = ''
@@ -231,6 +251,10 @@ const handleRefresh = async () => {
     manualRefreshing.value = false
   }
 }
+
+const loadMore = () => {
+  visibleCount.value += 5
+}
 </script>
 
 <template>
@@ -330,116 +354,122 @@ const handleRefresh = async () => {
         </div>
       </AppEmpty>
 
-      <div
-        v-else
-        class="grid gap-3"
-      >
-        <UCard
-          v-for="customer in customers"
-          :key="customer.id"
-          class="w-full rounded-2xl border-default"
-        >
-          <div
-            class="space-y-4 cursor-pointer rounded-xl transition-colors hover:bg-muted/20"
-            role="button"
-            tabindex="0"
-            @click="openDetails(customer)"
-            @keydown.enter.prevent="openDetails(customer)"
-            @keydown.space.prevent="openDetails(customer)"
+      <template v-else>
+        <div class="grid gap-2.5">
+          <UCard
+            v-for="customer in displayedCustomers"
+            :key="customer.id"
+            class="w-full rounded-2xl border-default"
           >
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex min-w-0 items-start gap-4">
-                <div
-                  class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
-                >
-                  <span
-                    class="text-base font-semibold uppercase tracking-[0.08em] text-primary"
+            <div
+              class="space-y-3 cursor-pointer rounded-xl transition-colors hover:bg-muted/20"
+              role="button"
+              tabindex="0"
+              @click="openDetails(customer)"
+              @keydown.enter.prevent="openDetails(customer)"
+              @keydown.space.prevent="openDetails(customer)"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex min-w-0 items-start gap-3">
+                  <div
+                    class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
                   >
-                    {{ customer.name.slice(0, 2) }}
-                  </span>
-                </div>
+                    <span
+                      class="text-sm font-semibold uppercase tracking-[0.08em] text-primary"
+                    >
+                      {{ customer.name.slice(0, 2) }}
+                    </span>
+                  </div>
 
-                <div class="min-w-0 space-y-2">
-                  <div class="flex min-w-0 flex-wrap items-center gap-2">
+                  <div class="min-w-0 space-y-1">
                     <p
                       class="truncate text-base font-semibold text-highlighted"
                     >
                       {{ customer.name }}
                     </p>
-                    <span
-                      class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
-                    >
-                      {{ taxIdKind(customer.tax_id) }}
-                    </span>
-                  </div>
 
-                  <p class="font-mono text-sm tracking-[0.04em] text-toned">
-                    {{ formatTaxId(customer.tax_id) }}
-                  </p>
+                    <p class="font-mono text-sm tracking-[0.04em] text-toned">
+                      {{ formatTaxId(customer.tax_id) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-2 text-sm">
+                <div
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-1.5 text-toned"
+                >
+                  <UIcon
+                    name="i-lucide-phone"
+                    class="size-4 shrink-0 text-primary"
+                  />
+                  <span class="truncate">{{
+                    formatBrPhone(customer.phone)
+                  }}</span>
+                </div>
+                <div
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-1.5 text-toned"
+                >
+                  <UIcon
+                    name="i-lucide-mail"
+                    class="size-4 shrink-0 text-primary"
+                  />
+                  <span class="truncate">{{
+                    customer.email || 'Sem e-mail'
+                  }}</span>
+                </div>
+              </div>
+
+              <div
+                class="flex items-center justify-between gap-3 border-t border-default/70 pt-2.5"
+              >
+                <div
+                  class="inline-flex items-center gap-2 text-sm font-medium text-primary"
+                >
+                  <UIcon
+                    name="i-lucide-panel-top"
+                    class="size-4"
+                  />
+                  <span>Ver detalhes</span>
+                </div>
+
+                <div class="flex gap-2 sm:justify-end">
+                  <UButton
+                    color="neutral"
+                    variant="soft"
+                    icon="i-lucide-pencil"
+                    @click.stop="openEdit(customer)"
+                  >
+                    Editar
+                  </UButton>
+                  <UButton
+                    color="error"
+                    variant="soft"
+                    icon="i-lucide-trash"
+                    @click.stop="askDelete(customer)"
+                  >
+                    Excluir
+                  </UButton>
                 </div>
               </div>
             </div>
+          </UCard>
+        </div>
 
-            <div class="flex flex-wrap gap-2 text-sm">
-              <div
-                class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned"
-              >
-                <UIcon
-                  name="i-lucide-phone"
-                  class="size-4 shrink-0 text-primary"
-                />
-                <span class="truncate">{{
-                  formatBrPhone(customer.phone)
-                }}</span>
-              </div>
-              <div
-                class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned"
-              >
-                <UIcon
-                  name="i-lucide-mail"
-                  class="size-4 shrink-0 text-primary"
-                />
-                <span class="truncate">{{
-                  customer.email || 'Sem e-mail'
-                }}</span>
-              </div>
-            </div>
-
-            <div
-              class="flex items-center justify-between gap-3 border-t border-default/70 pt-3"
-            >
-              <div
-                class="inline-flex items-center gap-2 text-sm font-medium text-primary"
-              >
-                <UIcon
-                  name="i-lucide-panel-top"
-                  class="size-4"
-                />
-                <span>Ver detalhes</span>
-              </div>
-
-              <div class="flex gap-2 sm:justify-end">
-                <UButton
-                  color="neutral"
-                  variant="soft"
-                  icon="i-lucide-pencil"
-                  @click.stop="openEdit(customer)"
-                >
-                  Editar
-                </UButton>
-                <UButton
-                  color="error"
-                  variant="soft"
-                  icon="i-lucide-trash"
-                  @click.stop="askDelete(customer)"
-                >
-                  Excluir
-                </UButton>
-              </div>
-            </div>
-          </div>
-        </UCard>
-      </div>
+        <div
+          v-if="hasMoreCustomers"
+          class="flex justify-center pt-2"
+        >
+          <UButton
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-chevron-down"
+            @click="loadMore"
+          >
+            Carregar mais
+          </UButton>
+        </div>
+      </template>
     </div>
 
     <USlideover

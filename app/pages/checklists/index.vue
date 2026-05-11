@@ -15,6 +15,7 @@ const templateSelectorOpen = ref(false)
 const templateSelectorSubmitting = ref(false)
 const selectedVehicle = ref<Vehicle | null>(null)
 const selectedTemplateId = ref<number | undefined>()
+const checklistStatusFilter = ref<'all' | 'completed' | 'in_progress'>('all')
 
 const {
   search,
@@ -24,15 +25,25 @@ const {
   refresh,
   loadMore,
   hasMore,
+  filterCounts,
   isLoadingMore
-} = useVehiclesPaginated()
+} = useVehiclesPaginated(checklistStatusFilter)
 const { templates, status: templatesStatus } = useChecklistTemplates()
 const { createChecklist } = useChecklistActions()
 
 const isLoading = computed(
   () => status.value === 'pending' && vehicles.value.length === 0
 )
+const checklistFilterOptions = [
+  { label: 'Todos', value: 'all' },
+  { label: 'Checklists finalizados', value: 'completed' },
+  { label: 'Checklists em andamento', value: 'in_progress' }
+] as const
+
 const hasVehicles = computed(() => vehicles.value.length > 0)
+const isFiltering = computed(
+  () => search.value.length > 0 || checklistStatusFilter.value !== 'all'
+)
 const needsMoreChars = computed(
   () => search.value.length > 0 && search.value.length < 4
 )
@@ -141,6 +152,8 @@ const handleRefresh = async () => {
     manualRefreshing.value = false
   }
 }
+
+const handleLoadMore = async () => await loadMore()
 </script>
 
 <template>
@@ -179,7 +192,7 @@ const handleRefresh = async () => {
       <div class="flex items-center gap-2">
         <UInput
           v-model="search"
-          placeholder="Buscar por placa, modelo ou cliente"
+          placeholder="Buscar por placa ou cliente"
           icon="i-lucide-search"
           size="xl"
           class="flex-1"
@@ -210,6 +223,28 @@ const handleRefresh = async () => {
         />
       </div>
 
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="option in checklistFilterOptions"
+          :key="option.value"
+          type="button"
+          class="rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
+          :class="
+            checklistStatusFilter === option.value
+              ? 'border-primary bg-primary/10 text-primary'
+              : 'border-default bg-default text-toned hover:bg-muted/60'
+          "
+          @click="checklistStatusFilter = option.value"
+        >
+          <span>{{ option.label }}</span>
+          <span
+            class="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] leading-none text-warning"
+          >
+            {{ filterCounts[option.value] }}
+          </span>
+        </button>
+      </div>
+
       <AppLoading
         v-if="isLoading || manualRefreshing"
         title="Carregando veículos"
@@ -233,7 +268,7 @@ const handleRefresh = async () => {
       />
 
       <AppEmpty
-        v-else-if="!hasVehicles && search.length > 0"
+        v-else-if="!hasVehicles && isFiltering"
         title="Nenhum veículo encontrado"
         description="Tente buscar com termos diferentes."
         icon="i-lucide-car-front"
@@ -257,66 +292,86 @@ const handleRefresh = async () => {
       </AppEmpty>
 
       <template v-else>
-        <div class="grid gap-3">
+        <div class="grid gap-2.5">
           <UCard
             v-for="vehicle in vehicles"
             :key="vehicle.id"
             class="w-full rounded-2xl border-default"
           >
-            <div class="space-y-4">
-              <div class="flex items-start gap-4">
-                <div
-                  class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
-                >
-                  <UIcon
-                    name="i-lucide-car-front"
-                    class="size-6 text-primary"
-                  />
-                </div>
+            <div class="space-y-3">
+              <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div class="flex min-w-0 items-start gap-3">
+                  <div
+                    class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
+                  >
+                    <UIcon
+                      name="i-lucide-car-front"
+                      class="size-5 text-primary"
+                    />
+                  </div>
 
-                <div class="min-w-0 flex-1 space-y-1">
-                  <div class="flex flex-wrap items-center gap-2">
+                  <div class="min-w-0 space-y-1">
                     <p class="text-base font-semibold text-highlighted">
                       {{ formatLicensePlate(vehicle.license_plate) }}
                     </p>
-                    <span
-                      class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
-                    >
-                      {{ vehicle.customer?.name || 'Sem cliente' }}
-                    </span>
-                  </div>
 
-                  <p class="text-sm text-toned">
-                    {{ vehicle.model || 'Modelo não informado' }}
-                    <template v-if="vehicle.model_year">
-                      · {{ vehicle.model_year }}
-                    </template>
+                    <p class="text-sm text-toned">
+                      {{ vehicle.model || 'Modelo não informado' }}
+                      <template v-if="vehicle.model_year">
+                        · {{ vehicle.model_year }}
+                      </template>
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  v-if="vehicle.customer"
+                  class="rounded-xl border border-default bg-muted/20 px-3 py-2 sm:max-w-xs sm:text-right"
+                >
+                  <p
+                    class="text-xs font-semibold uppercase tracking-[0.18em] text-primary"
+                  >
+                    Cliente
                   </p>
+                  <p class="mt-0.5 truncate text-sm font-medium text-highlighted">
+                    {{ vehicle.customer.name }}
+                  </p>
+                </div>
+              </div>
 
-                  <div class="flex flex-wrap gap-2 pt-1 text-xs text-toned">
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon
-                        name="i-lucide-gauge"
-                        class="size-3.5 text-primary"
-                      />
-                      {{ formatMileage(vehicle.latest_mileage) }}
-                    </span>
-                    <span class="inline-flex items-center gap-1.5">
-                      <UIcon
-                        name="i-lucide-clipboard-check"
-                        class="size-3.5 text-primary"
-                      />
-                      {{ vehicle.checklists_done ?? 0 }}/{{
-                        vehicle.checklists_total ?? 0
-                      }}
-                      checklists
-                    </span>
-                  </div>
+              <div class="flex flex-wrap gap-2 text-sm">
+                <div
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-1.5 text-toned"
+                >
+                  <UIcon
+                    name="i-lucide-gauge"
+                    class="size-4 shrink-0 text-primary"
+                  />
+                  <span class="truncate">{{
+                    formatMileage(vehicle.latest_mileage)
+                  }}</span>
+                </div>
+
+                <div
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-1.5 text-toned"
+                >
+                  <UIcon
+                    name="i-lucide-clipboard-check"
+                    class="size-4 shrink-0 text-primary"
+                  />
+                  <span class="truncate">
+                    {{ vehicle.checklists_done ?? 0 }}/{{
+                      vehicle.checklists_total ?? 0
+                    }}
+                    checklists
+                  </span>
                 </div>
               </div>
 
               <div
-                class="flex flex-wrap items-center gap-2 border-t border-default/70 pt-3"
+                class="flex flex-wrap items-center gap-2 border-t border-default/70 pt-2.5"
               >
                 <UButton
                   color="primary"
@@ -349,9 +404,9 @@ const handleRefresh = async () => {
             variant="soft"
             icon="i-lucide-chevron-down"
             :loading="isLoadingMore"
-            @click="loadMore"
+            @click="handleLoadMore"
           >
-            Carregar mais
+            {{ isFiltering ? 'Carregar mais (Filtrado)' : 'Carregar mais' }}
           </UButton>
         </div>
       </template>
@@ -371,7 +426,7 @@ const handleRefresh = async () => {
         <div class="space-y-4">
           <UInput
             v-model="search"
-            placeholder="Buscar por placa, modelo ou cliente"
+            placeholder="Buscar por placa ou cliente"
             icon="i-lucide-search"
             size="xl"
             class="w-full"

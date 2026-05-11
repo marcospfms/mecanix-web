@@ -120,8 +120,11 @@ type MileageFormPayload = {
   notes?: string | null;
 }
 
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, '')
+function normalizeSearchText(value?: string | null) {
+  return (value ?? '')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
 }
 
 function normalizePlate(value: string) {
@@ -209,29 +212,25 @@ export function useVehicles() {
   })
 
   const filteredVehicles = computed(() => {
-    const term = search.value.trim().toLowerCase()
+    const term = normalizeSearchText(search.value.trim())
     const list = [...vehiclesResolved.value].sort((a, b) => b.id - a.id)
 
     if (!term) {
       return list
     }
 
-    const searchDigits = onlyDigits(term)
-
     return list.filter((vehicle) => {
-      const plate = vehicle.license_plate.toLowerCase()
-      const model = (vehicle.model ?? '').toLowerCase()
-      const customerName = (vehicle.customer?.name ?? '').toLowerCase()
-      const customerTaxId = onlyDigits(vehicle.customer?.tax_id ?? '')
+      const plate = normalizeSearchText(vehicle.license_plate)
+      const normalizedPlate = normalizeSearchText(
+        normalizePlate(vehicle.license_plate)
+      )
+      const customerName = normalizeSearchText(vehicle.customer?.name)
+      const plateTerm = normalizeSearchText(normalizePlate(term))
 
       return (
         plate.includes(term)
-        || normalizePlate(vehicle.license_plate)
-          .toLowerCase()
-          .includes(term.replace(/\s+/g, ''))
-          || model.includes(term)
-          || customerName.includes(term)
-          || (searchDigits.length > 0 && customerTaxId.includes(searchDigits))
+        || normalizedPlate.includes(plateTerm)
+        || customerName.includes(term)
       )
     })
   })
@@ -459,6 +458,11 @@ type PaginatedVehiclesResponse = {
   next_cursor: string | null;
   has_more: boolean;
   per_page: number;
+  filter_counts?: {
+    all: number;
+    completed: number;
+    in_progress: number;
+  };
 }
 
 type PaginatedEnvelope = {
@@ -466,13 +470,22 @@ type PaginatedEnvelope = {
   data: PaginatedVehiclesResponse;
 }
 
-export function useVehiclesPaginated() {
+export type ChecklistStatusFilter = 'all' | 'completed' | 'in_progress'
+
+export function useVehiclesPaginated(
+  checklistStatus?: Ref<ChecklistStatusFilter>
+) {
   const auth = useAuth()
 
   const search = ref('')
   const vehicles = ref<Vehicle[]>([])
   const nextCursor = ref<string | null>(null)
   const hasMore = ref(false)
+  const filterCounts = ref<Record<ChecklistStatusFilter, number>>({
+    all: 0,
+    completed: 0,
+    in_progress: 0
+  })
   const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
   const error = ref<unknown>(null)
   const isLoadingMore = ref(false)
@@ -484,7 +497,10 @@ export function useVehiclesPaginated() {
       return
     }
 
-    const params: Record<string, string> = { per_page: '20' }
+    const params: Record<string, string> = {
+      per_page: '5',
+      checklist_status: checklistStatus?.value ?? 'all'
+    }
     if (search.value.trim()) params.q = search.value.trim()
     if (cursor) params.cursor = cursor
 
@@ -504,6 +520,11 @@ export function useVehiclesPaginated() {
 
       nextCursor.value = page.next_cursor ?? null
       hasMore.value = page.has_more ?? !!page.next_cursor
+      filterCounts.value = {
+        all: page.filter_counts?.all ?? 0,
+        completed: page.filter_counts?.completed ?? 0,
+        in_progress: page.filter_counts?.in_progress ?? 0
+      }
       status.value = 'success'
     } catch (err) {
       if (!append) vehicles.value = []
@@ -531,7 +552,11 @@ export function useVehiclesPaginated() {
   }
 
   watch(
-    [() => auth.hydrated.value, () => auth.token.value],
+    [
+      () => auth.hydrated.value,
+      () => auth.token.value,
+      () => checklistStatus?.value ?? 'all'
+    ],
     async ([hydrated, token]) => {
       if (!hydrated) return
       if (!token) {
@@ -550,6 +575,7 @@ export function useVehiclesPaginated() {
     vehicles,
     nextCursor,
     hasMore,
+    filterCounts,
     isLoadingMore,
     status,
     error,

@@ -88,7 +88,8 @@ const summaryCards = computed(() =>
           key: 'companies',
           label: 'Empresas',
           value: statsResolved.value.total_companies,
-          icon: 'i-lucide-building-2'
+          icon: 'i-lucide-building-2',
+          to: '/companies'
         }
       : null,
     statsResolved.value.total_customers !== undefined
@@ -96,7 +97,8 @@ const summaryCards = computed(() =>
           key: 'customers',
           label: 'Clientes',
           value: statsResolved.value.total_customers,
-          icon: 'i-lucide-users'
+          icon: 'i-lucide-users',
+          to: '/customers'
         }
       : null,
     statsResolved.value.total_vehicles !== undefined
@@ -104,7 +106,8 @@ const summaryCards = computed(() =>
           key: 'vehicles',
           label: 'Veículos',
           value: statsResolved.value.total_vehicles,
-          icon: 'i-lucide-car-front'
+          icon: 'i-lucide-car-front',
+          to: '/vehicles'
         }
       : null,
     statsResolved.value.checklists_templates !== undefined
@@ -112,14 +115,15 @@ const summaryCards = computed(() =>
           key: 'templates',
           label: 'Templates',
           value: statsResolved.value.checklists_templates,
-          icon: 'i-lucide-layers-3'
+          icon: 'i-lucide-layers-3',
+          to: '/templates'
         }
       : null
   ].filter((item): item is NonNullable<typeof item> => item !== null)
 )
 
 const recentExecutions = computed(
-  () => statsResolved.value.recent_executions ?? []
+  () => (statsResolved.value.recent_executions ?? []).slice(0, 3)
 )
 const employeeStats = computed(
   () => statsResolved.value.checklists_by_employee ?? []
@@ -339,28 +343,82 @@ const handleRefresh = async () => {
           </div>
 
           <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <UCard
+            <NuxtLink
               v-for="card in summaryCards"
               :key="card.key"
+              :to="card.to"
+              class="group block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-default"
+            >
+              <UCard
+                class="h-full rounded-2xl border-default transition hover:border-primary/60 hover:bg-muted/40"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="space-y-1">
+                    <p class="text-sm text-toned">
+                      {{ card.label }}
+                    </p>
+                    <p
+                      class="text-2xl font-semibold tracking-tight text-highlighted"
+                    >
+                      {{ card.value }}
+                    </p>
+                  </div>
+
+                  <div
+                    class="rounded-xl bg-muted/60 p-2 text-primary transition group-hover:bg-primary/10"
+                  >
+                    <UIcon
+                      :name="card.icon"
+                      class="size-5"
+                    />
+                  </div>
+                </div>
+              </UCard>
+            </NuxtLink>
+          </div>
+        </section>
+
+        <section
+          v-if="employeeStats.length > 0"
+          class="space-y-3"
+        >
+          <h2 class="text-lg font-semibold text-highlighted">
+            Execuções por Funcionário
+          </h2>
+
+          <div class="grid gap-3">
+            <UCard
+              v-for="employee in employeeStats"
+              :key="employee.user_id"
               class="rounded-2xl border-default"
             >
-              <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center justify-between gap-3">
                 <div class="space-y-1">
-                  <p class="text-sm text-toned">
-                    {{ card.label }}
+                  <p class="text-base font-semibold text-highlighted">
+                    {{
+                      employee.name
+                        || employee.username
+                        || `Funcionário #${employee.user_id}`
+                    }}
                   </p>
-                  <p
-                    class="text-2xl font-semibold tracking-tight text-highlighted"
-                  >
-                    {{ card.value }}
+                  <p class="text-sm text-toned">
+                    {{
+                      employee.username
+                        ? `@${employee.username}`
+                        : 'Equipe da operação'
+                    }}
                   </p>
                 </div>
 
-                <div class="rounded-xl bg-muted/60 p-2 text-primary">
-                  <UIcon
-                    :name="card.icon"
-                    class="size-5"
-                  />
+                <div class="rounded-2xl bg-primary/10 px-4 py-2 text-center">
+                  <p
+                    class="text-xs font-medium uppercase tracking-[0.2em] text-primary"
+                  >
+                    Total
+                  </p>
+                  <p class="text-lg font-semibold text-primary">
+                    {{ employee.total }}
+                  </p>
                 </div>
               </div>
             </UCard>
@@ -447,53 +505,6 @@ const handleRefresh = async () => {
                       minute="2-digit"
                     />
                   </div>
-                </div>
-              </div>
-            </UCard>
-          </div>
-        </section>
-
-        <section
-          v-if="employeeStats.length > 0"
-          class="space-y-3"
-        >
-          <h2 class="text-lg font-semibold text-highlighted">
-            Por funcionário
-          </h2>
-
-          <div class="grid gap-3">
-            <UCard
-              v-for="employee in employeeStats"
-              :key="employee.user_id"
-              class="rounded-2xl border-default"
-            >
-              <div class="flex items-center justify-between gap-3">
-                <div class="space-y-1">
-                  <p class="text-base font-semibold text-highlighted">
-                    {{
-                      employee.name
-                        || employee.username
-                        || `Funcionário #${employee.user_id}`
-                    }}
-                  </p>
-                  <p class="text-sm text-toned">
-                    {{
-                      employee.username
-                        ? `@${employee.username}`
-                        : 'Equipe da operação'
-                    }}
-                  </p>
-                </div>
-
-                <div class="rounded-2xl bg-primary/10 px-4 py-2 text-center">
-                  <p
-                    class="text-xs font-medium uppercase tracking-[0.2em] text-primary"
-                  >
-                    Total
-                  </p>
-                  <p class="text-lg font-semibold text-primary">
-                    {{ employee.total }}
-                  </p>
                 </div>
               </div>
             </UCard>

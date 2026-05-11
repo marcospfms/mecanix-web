@@ -10,6 +10,34 @@ const runtimeConfig = useRuntimeConfig()
 const googleButton = ref<HTMLDivElement | null>(null)
 const errorMessage = ref<string | null>(null)
 const googleLoading = ref(true)
+const devLoginEnabled = ref(false)
+const devLoginOpen = ref(false)
+const devUsers = ref<DevLoginUser[]>([])
+const devQuery = ref('')
+const devLoading = ref(false)
+const devLoginUserId = ref<number | null>(null)
+
+type PublicSettings = {
+  allow_open_registration: boolean;
+  push_token_check_hours?: number;
+  environment?: string;
+  dev_login_enabled?: boolean;
+}
+
+type ApiEnvelope<T> = {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+type DevLoginUser = {
+  id: number;
+  name: string;
+  email: string | null;
+  username: string | null;
+  is_employee: boolean;
+  employee_role: 'manager' | 'technician' | 'custom' | null;
+}
 
 declare global {
   interface Window {
@@ -84,8 +112,51 @@ const ensureGoogleScript = async () => {
   })
 }
 
+const loadDevUsers = async () => {
+  devLoading.value = true
+  errorMessage.value = null
+
+  try {
+    const response = await useApiFetch<ApiEnvelope<DevLoginUser[]>>(
+      `/dev-login/users${devQuery.value.trim() ? `?q=${encodeURIComponent(devQuery.value.trim())}` : ''}`
+    )
+    devUsers.value = response.data
+  } catch (error: unknown) {
+    errorMessage.value = getErrorMessage(error, 'Falha ao carregar usuários de teste.')
+  } finally {
+    devLoading.value = false
+  }
+}
+
+const openDevLogin = async () => {
+  devLoginOpen.value = true
+  await loadDevUsers()
+}
+
+const loginAsDevUser = async (user: DevLoginUser) => {
+  devLoginUserId.value = user.id
+  errorMessage.value = null
+
+  try {
+    await auth.loginWithDevUser(user.id)
+    devLoginOpen.value = false
+    await navigateTo({ name: 'index' })
+  } catch (error: unknown) {
+    errorMessage.value = getErrorMessage(error, 'Falha ao entrar como usuário de teste.')
+  } finally {
+    devLoginUserId.value = null
+  }
+}
+
 onMounted(async () => {
   googleLoading.value = true
+
+  try {
+    const response = await useApiFetch<ApiEnvelope<PublicSettings>>('/settings/public')
+    devLoginEnabled.value = Boolean(response.data.dev_login_enabled)
+  } catch {
+    devLoginEnabled.value = false
+  }
 
   if (!runtimeConfig.public.googleClientId) {
     errorMessage.value = 'O acesso não está configurado neste ambiente.'
@@ -204,6 +275,16 @@ onMounted(async () => {
           </div>
         </div>
 
+        <UButton
+          v-if="devLoginEnabled"
+          block
+          variant="soft"
+          color="primary"
+          icon="i-lucide-terminal"
+          label="Entrar como usuário de teste"
+          @click="openDevLogin"
+        />
+
         <div class="hidden gap-2.5 text-sm text-toned sm:grid">
           <div
             class="flex items-center gap-3 rounded-2xl border border-default bg-elevated/80 px-4 py-3"
@@ -231,5 +312,77 @@ onMounted(async () => {
         </div>
       </div>
     </UCard>
+
+    <UModal
+      v-model:open="devLoginOpen"
+      title="Usuários de teste"
+      description="Disponível apenas em desenvolvimento."
+    >
+      <template #body>
+        <div class="space-y-4">
+          <div class="flex gap-2">
+            <UInput
+              v-model="devQuery"
+              class="min-w-0 flex-1"
+              placeholder="Nome, email ou usuário"
+              icon="i-lucide-search"
+              @keyup.enter="loadDevUsers"
+            />
+            <UButton
+              icon="i-lucide-search"
+              :loading="devLoading"
+              @click="loadDevUsers"
+            />
+          </div>
+
+          <div
+            v-if="devLoading"
+            class="flex min-h-32 items-center justify-center"
+          >
+            <UIcon
+              name="i-lucide-loader-circle"
+              class="size-6 animate-spin text-primary"
+            />
+          </div>
+
+          <div
+            v-else
+            class="max-h-[420px] space-y-2 overflow-y-auto"
+          >
+            <button
+              v-for="item in devUsers"
+              :key="item.id"
+              type="button"
+              class="flex w-full items-center gap-3 rounded-xl border border-default bg-default px-3 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+              :disabled="devLoginUserId !== null"
+              @click="loginAsDevUser(item)"
+            >
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                {{ item.name.slice(0, 1) }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold text-highlighted">
+                  {{ item.name }}
+                </p>
+                <p class="truncate text-xs text-toned">
+                  {{ item.email || item.username || 'Sem identificador' }}
+                </p>
+              </div>
+              <UBadge
+                :color="item.is_employee ? 'warning' : 'primary'"
+                variant="soft"
+              >
+                {{ item.is_employee ? 'Funcionário' : 'Cliente' }}
+              </UBadge>
+              <UIcon
+                v-if="devLoginUserId === item.id"
+                name="i-lucide-loader-circle"
+                class="size-4 animate-spin text-primary"
+              />
+            </button>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

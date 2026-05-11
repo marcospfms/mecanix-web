@@ -24,6 +24,11 @@ type GoogleLoginPayload = {
   id_token: string;
 }
 
+type DevLoginResponse = {
+  token: string;
+  user: AuthUser;
+}
+
 export const AUTH_COOKIE_KEY = 'mecanix_client_token'
 
 export function useAuth() {
@@ -105,6 +110,41 @@ export function useAuth() {
     }
   }
 
+  const loginWithDevUser = async (userId: number) => {
+    loading.value = true
+
+    try {
+      const response = await $api<ApiEnvelope<DevLoginResponse>>(
+        '/dev-login/login-as',
+        {
+          method: 'POST',
+          body: {
+            user_id: userId,
+            device_name: 'dev-client-web'
+          }
+        }
+      )
+
+      token.value = response.data.token
+      user.value = response.data.user
+
+      if (response.data.user.is_employee) {
+        token.value = null
+        user.value = null
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Funcionários não acessam o client web.'
+        })
+      }
+
+      hydrated.value = true
+
+      return response.data
+    } finally {
+      loading.value = false
+    }
+  }
+
   const logout = async () => {
     try {
       if (token.value) {
@@ -125,6 +165,7 @@ export function useAuth() {
     hydrated: readonly(hydrated),
     isAuthenticated,
     loginWithGoogle,
+    loginWithDevUser,
     refresh,
     logout
   }

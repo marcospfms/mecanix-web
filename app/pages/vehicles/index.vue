@@ -12,7 +12,7 @@ const route = useRoute('vehicles')
 const toast = useAppToast()
 const manualRefreshing = ref(false)
 const queryHandled = ref(false)
-const visibleCount = ref(20)
+const visibleCount = ref(5)
 
 const {
   search,
@@ -78,10 +78,17 @@ const customerOptions = computed(() => {
 })
 
 watch(
+  () => search.value,
+  () => {
+    visibleCount.value = 5
+  }
+)
+
+watch(
   () => vehicles.value.length,
   () => {
-    if (visibleCount.value < 20) {
-      visibleCount.value = 20
+    if (visibleCount.value < 5) {
+      visibleCount.value = 5
     }
   }
 )
@@ -281,7 +288,7 @@ const handleRefresh = async () => {
 }
 
 const loadMore = () => {
-  visibleCount.value += 20
+  visibleCount.value += 5
 }
 </script>
 
@@ -383,32 +390,34 @@ const loadMore = () => {
       </AppEmpty>
 
       <template v-else>
-        <div class="grid gap-3">
+        <div class="grid gap-2.5">
           <UCard
             v-for="vehicle in displayedVehicles"
             :key="vehicle.id"
             class="w-full rounded-2xl border-default"
           >
             <div
-              class="space-y-4 cursor-pointer rounded-xl transition-colors hover:bg-muted/20"
+              class="space-y-3 cursor-pointer rounded-xl transition-colors hover:bg-muted/20"
               role="button"
               tabindex="0"
               @click="openDetails(vehicle)"
               @keydown.enter.prevent="openDetails(vehicle)"
               @keydown.space.prevent="openDetails(vehicle)"
             >
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex min-w-0 items-start gap-4">
+              <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div class="flex min-w-0 items-start gap-3">
                   <div
-                    class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
+                    class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-default bg-[linear-gradient(180deg,rgba(0,193,106,0.14)_0%,rgba(0,161,85,0.08)_100%)]"
                   >
                     <UIcon
                       name="i-lucide-car-front"
-                      class="size-6 text-primary"
+                      class="size-5 text-primary"
                     />
                   </div>
 
-                  <div class="min-w-0 space-y-2">
+                  <div class="min-w-0 space-y-1">
                     <p
                       class="truncate text-base font-semibold text-highlighted"
                     >
@@ -420,11 +429,25 @@ const loadMore = () => {
                     </p>
                   </div>
                 </div>
+
+                <div
+                  v-if="vehicle.customer"
+                  class="rounded-xl border border-default bg-muted/20 px-3 py-2 sm:max-w-xs sm:text-right"
+                >
+                  <p
+                    class="text-xs font-semibold uppercase tracking-[0.18em] text-primary"
+                  >
+                    Cliente
+                  </p>
+                  <p class="mt-0.5 truncate text-sm font-medium text-highlighted">
+                    {{ vehicle.customer.name }}
+                  </p>
+                </div>
               </div>
 
               <div class="flex flex-wrap gap-2 text-sm">
                 <div
-                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned"
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-1.5 text-toned"
                 >
                   <UIcon
                     name="i-lucide-calendar-range"
@@ -436,7 +459,7 @@ const loadMore = () => {
                 </div>
 
                 <div
-                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-2 text-toned"
+                  class="inline-flex max-w-full items-center gap-2 rounded-full border border-default bg-muted/25 px-3 py-1.5 text-toned"
                 >
                   <UIcon
                     name="i-lucide-palette"
@@ -449,24 +472,7 @@ const loadMore = () => {
               </div>
 
               <div
-                v-if="vehicle.customer"
-                class="rounded-2xl border border-default bg-muted/20 px-4 py-3"
-              >
-                <p
-                  class="text-xs font-semibold uppercase tracking-[0.18em] text-primary"
-                >
-                  Cliente
-                </p>
-                <p class="mt-1 text-sm font-medium text-highlighted">
-                  {{ vehicle.customer.name }}
-                </p>
-                <p class="mt-1 text-xs text-toned">
-                  {{ formatTaxId(vehicle.customer.tax_id) }}
-                </p>
-              </div>
-
-              <div
-                class="flex items-center justify-between gap-3 border-t border-default/70 pt-3"
+                class="flex items-center justify-between gap-3 border-t border-default/70 pt-2.5"
               >
                 <div
                   class="inline-flex items-center gap-2 text-sm font-medium text-primary"
