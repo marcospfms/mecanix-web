@@ -11,31 +11,35 @@ App web para donos de oficina gerenciarem empresas, clientes, veículos, checkli
 | Ícones          | `@iconify-json/lucide` + `@iconify-json/simple-icons` |
 | HTTP            | `$fetch` nativo do Nuxt / composables personalizados  |
 | Auth            | Token Sanctum (owners via Google OAuth)               |
-| Package manager | pnpm                                                  |
+| Package manager | yarn                                                  |
 
 ## Variáveis de ambiente
 
-Crie um `.env` na raiz do projeto:
+Copie o arquivo de exemplo e ajuste os valores:
 
-```env
-NUXT_PUBLIC_API_URL=http://localhost:8000/api
-NUXT_PUBLIC_APP_URL=http://localhost:3000
+```bash
+cp .env.example .env
 ```
+
+Ver [.env.example](.env.example) para as variáveis disponíveis.
+
+Para override em runtime no servidor Nuxt, use `NUXT_PUBLIC_GOOGLE_CLIENT_ID`.
+O nome antigo `NUXT_PUBLIC_GOOGLE_CLIENT_ID_WEB` fica apenas como fallback de compatibilidade em build.
 
 ## Desenvolvimento
 
 ```bash
-pnpm install
-pnpm dev          # http://localhost:3000
+yarn install
+yarn dev          # http://localhost:3000
 ```
 
 ## Outros comandos
 
 ```bash
-pnpm build        # build de produção
-pnpm preview      # preview do build local
-pnpm lint         # ESLint
-pnpm typecheck    # vue-tsc
+yarn build        # build de produção
+yarn preview      # preview do build local
+yarn lint         # ESLint
+yarn typecheck    # vue-tsc
 ```
 
 ## Estrutura
@@ -61,3 +65,7 @@ Ver `docs/roadmaps/`.
 ## API
 
 Documentação dos endpoints disponível em `mecanix-core/docs/`.
+
+## Deploy
+
+Os ambientes devem receber as variáveis públicas do Nuxt no serviço do `mecanix-web`.
