@@ -10,25 +10,12 @@ const runtimeConfig = useRuntimeConfig()
 const googleButton = ref<HTMLDivElement | null>(null)
 const errorMessage = ref<string | null>(null)
 const googleLoading = ref(true)
-const devLoginEnabled = ref(false)
+const devLoginEnabled = runtimeConfig.public.devLoginEnabled as boolean
 const devLoginOpen = ref(false)
 const devUsers = ref<DevLoginUser[]>([])
 const devQuery = ref('')
 const devLoading = ref(false)
 const devLoginUserId = ref<number | null>(null)
-
-type PublicSettings = {
-  allow_open_registration: boolean;
-  push_token_check_hours?: number;
-  environment?: string;
-  dev_login_enabled?: boolean;
-}
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  data: T;
-  message?: string;
-}
 
 type DevLoginUser = {
   id: number;
@@ -117,7 +104,7 @@ const loadDevUsers = async () => {
   errorMessage.value = null
 
   try {
-    const response = await useApiFetch<ApiEnvelope<DevLoginUser[]>>(
+    const response = await useApiFetch<{ data: DevLoginUser[] }>(
       `/dev-login/users${devQuery.value.trim() ? `?q=${encodeURIComponent(devQuery.value.trim())}` : ''}`
     )
     devUsers.value = response.data
@@ -150,13 +137,6 @@ const loginAsDevUser = async (user: DevLoginUser) => {
 
 onMounted(async () => {
   googleLoading.value = true
-
-  try {
-    const response = await useApiFetch<ApiEnvelope<PublicSettings>>('/settings/public')
-    devLoginEnabled.value = Boolean(response.data.dev_login_enabled)
-  } catch {
-    devLoginEnabled.value = false
-  }
 
   if (!runtimeConfig.public.googleClientId) {
     errorMessage.value = 'O acesso não está configurado neste ambiente.'
@@ -238,6 +218,16 @@ onMounted(async () => {
           :description="errorMessage"
         />
 
+        <UButton
+          v-if="devLoginEnabled"
+          block
+          variant="soft"
+          color="primary"
+          icon="i-lucide-terminal"
+          label="Entrar como usuário de teste"
+          @click="openDevLogin"
+        />
+
         <div
           class="rounded-[1.5rem] border border-default bg-muted/55 p-4 sm:p-5"
         >
@@ -274,16 +264,6 @@ onMounted(async () => {
             />
           </div>
         </div>
-
-        <UButton
-          v-if="devLoginEnabled"
-          block
-          variant="soft"
-          color="primary"
-          icon="i-lucide-terminal"
-          label="Entrar como usuário de teste"
-          @click="openDevLogin"
-        />
 
         <div class="hidden gap-2.5 text-sm text-toned sm:grid">
           <div
