@@ -3,9 +3,10 @@ import { getErrorMessage } from '../composables/useAppToast'
 import {
   roleLabel,
   permissionModules,
-  permissionActions,
+  getPermissionActionsForModule,
   getPermissionPreset,
-  detectRoleFromPermissions
+  detectRoleFromPermissions,
+  sanitizeEmployeePermissions
 } from '../composables/useEmployees'
 import type {
   Employee,
@@ -33,6 +34,7 @@ const {
   createEmployee,
   updateEmployee,
   deactivateEmployee,
+  removeEmployeeFromCompany,
   resetPassword
 } = useEmployees()
 
@@ -65,6 +67,7 @@ const togglePermission = (
   action: PermissionActionKey
 ) => {
   formPermissions.value[module][action] = !formPermissions.value[module][action]
+  formPermissions.value = sanitizeEmployeePermissions(formPermissions.value)
   formRole.value = detectRoleFromPermissions(formPermissions.value)
 }
 // ─── Password reset ──────────────────────────────────────────────────
@@ -79,6 +82,10 @@ const resetErrors = ref<{ password?: string; confirm?: string }>({})
 const confirmOpen = ref(false)
 const confirmLoading = ref(false)
 const confirmTarget = ref<Employee | null>(null)
+
+const removeCompanyLinkOpen = ref(false)
+const removeCompanyLinkLoading = ref(false)
+const removeCompanyLinkTarget = ref<Employee | null>(null)
 
 // ─── Computed ────────────────────────────────────────────────────────
 const isLoading = computed(
@@ -150,6 +157,7 @@ const openEdit = (emp: Employee) => {
       ?? getPermissionPreset(emp.role === 'custom' ? 'technician' : emp.role)
     )
   )
+  formPermissions.value = sanitizeEmployeePermissions(formPermissions.value)
   formOpen.value = true
 }
 
@@ -231,6 +239,11 @@ const askDeactivate = (emp: Employee) => {
   confirmOpen.value = true
 }
 
+const askRemoveFromCompany = (emp: Employee) => {
+  removeCompanyLinkTarget.value = emp
+  removeCompanyLinkOpen.value = true
+}
+
 const handleDeactivate = async () => {
   if (!confirmTarget.value) return
   confirmLoading.value = true
@@ -255,6 +268,33 @@ const handleDeactivate = async () => {
     })
   } finally {
     confirmLoading.value = false
+  }
+}
+
+const handleRemoveFromCompany = async () => {
+  if (!removeCompanyLinkTarget.value) return
+  removeCompanyLinkLoading.value = true
+  try {
+    await removeEmployeeFromCompany(
+      removeCompanyLinkTarget.value.company_id,
+      removeCompanyLinkTarget.value.id
+    )
+    toast.success({
+      title: 'Vínculo removido',
+      description: 'O usuário foi removido apenas desta loja.'
+    })
+    removeCompanyLinkOpen.value = false
+    removeCompanyLinkTarget.value = null
+  } catch (err: unknown) {
+    toast.error({
+      title: 'Falha ao remover vínculo',
+      description: getErrorMessage(
+        err,
+        'Não foi possível remover o funcionário desta loja.'
+      )
+    })
+  } finally {
+    removeCompanyLinkLoading.value = false
   }
 }
 
@@ -551,6 +591,15 @@ const handleRefresh = async () => {
                   >
                     Desativar
                   </UButton>
+                  <UButton
+                    color="error"
+                    variant="outline"
+                    icon="i-lucide-trash-2"
+                    size="sm"
+                    @click="askRemoveFromCompany(emp)"
+                  >
+                    Remover da loja
+                  </UButton>
                 </div>
               </div>
             </UCard>
@@ -766,7 +815,7 @@ const handleRefresh = async () => {
 
                 <div class="space-y-0">
                   <div
-                    v-for="action in permissionActions"
+                    v-for="action in getPermissionActionsForModule(mod.key)"
                     :key="action.key"
                     class="flex items-center justify-between border-t border-default py-2.5"
                   >
@@ -917,6 +966,20 @@ const handleRefresh = async () => {
       confirm-label="Desativar"
       :loading="confirmLoading"
       @confirm="handleDeactivate"
+    />
+
+    <!-- ── REMOVE FROM COMPANY CONFIRM ──────────────────────────── -->
+    <AppConfirm
+      v-model:open="removeCompanyLinkOpen"
+      title="Remover da loja"
+      :description="
+        removeCompanyLinkTarget
+          ? `${removeCompanyLinkTarget.user.name} será desvinculado apenas desta loja. O histórico de checklists continuará preservado.`
+          : 'O usuário será removido apenas desta loja.'
+      "
+      confirm-label="Remover"
+      :loading="removeCompanyLinkLoading"
+      @confirm="handleRemoveFromCompany"
     />
   </div>
 </template>
