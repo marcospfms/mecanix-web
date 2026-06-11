@@ -75,6 +75,18 @@ export const permissionActions: Array<{
   { key: 'delete', label: 'Excluir' }
 ]
 
+const employeeDeletableModules: PermissionModuleKey[] = ['checklists']
+
+export function isEmployeeDeleteAllowed(module: PermissionModuleKey): boolean {
+  return employeeDeletableModules.includes(module)
+}
+
+export function getPermissionActionsForModule(module: PermissionModuleKey) {
+  return permissionActions.filter(
+    action => action.key !== 'delete' || isEmployeeDeleteAllowed(module)
+  )
+}
+
 export function getPermissionPreset(
   role: 'manager' | 'technician'
 ): EmployeePermissions {
@@ -89,7 +101,7 @@ export function getPermissionPreset(
         update: true,
         delete: false
       },
-      checklists: { view: true, create: true, update: true, delete: false },
+      checklists: { view: true, create: true, update: true, delete: true },
       employees: { view: true, create: true, update: true, delete: false }
     }
   }
@@ -103,21 +115,37 @@ export function getPermissionPreset(
       update: false,
       delete: false
     },
-    checklists: { view: true, create: true, update: true, delete: false },
+    checklists: { view: true, create: true, update: true, delete: true },
     employees: { view: false, create: false, update: false, delete: false }
   }
+}
+
+export function sanitizeEmployeePermissions(
+  permissions: EmployeePermissions
+): EmployeePermissions {
+  const sanitized = JSON.parse(JSON.stringify(permissions)) as EmployeePermissions
+
+  permissionModules.forEach((module) => {
+    if (!isEmployeeDeleteAllowed(module.key)) {
+      sanitized[module.key].delete = false
+    }
+  })
+
+  return sanitized
 }
 
 export function detectRoleFromPermissions(
   permissions: EmployeePermissions
 ): 'manager' | 'technician' | 'custom' {
+  const sanitized = sanitizeEmployeePermissions(permissions)
+
   if (
-    JSON.stringify(permissions)
+    JSON.stringify(sanitized)
     === JSON.stringify(getPermissionPreset('manager'))
   )
     return 'manager'
   if (
-    JSON.stringify(permissions)
+    JSON.stringify(sanitized)
     === JSON.stringify(getPermissionPreset('technician'))
   )
     return 'technician'
@@ -309,6 +337,19 @@ export function useEmployees() {
     )
   }
 
+  const removeEmployeeFromCompany = async (
+    companyId: number,
+    employeeId: number
+  ): Promise<void> => {
+    await useApiFetch(`/companies/${companyId}/employees/${employeeId}/company-link`, {
+      method: 'DELETE'
+    })
+
+    setEmployees(
+      employeesResolved.value.filter(emp => emp.id !== employeeId)
+    )
+  }
+
   const resetPassword = async (
     companyId: number,
     employeeId: number,
@@ -332,6 +373,7 @@ export function useEmployees() {
     createEmployee,
     updateEmployee,
     deactivateEmployee,
+    removeEmployeeFromCompany,
     resetPassword
   }
 }
