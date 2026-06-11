@@ -23,7 +23,7 @@ export default defineNuxtConfig({
         process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID
         || process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID_WEB
         || '',
-      devLoginEnabled: process.env.NUXT_PUBLIC_DEV_LOGIN_ENABLED === 'true',
+      devLoginEnabled: process.env.NUXT_PUBLIC_DEV_LOGIN_ENABLED === 'true'
     }
   },
 
